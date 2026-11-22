@@ -1,0 +1,459 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlatformAccountType {
+  BUYER
+  SUPPLIER
+
+  @@map("platform_account_type")
+}
+
+enum OrganizationType {
+  BUYER
+  SUPPLIER
+
+  @@map("organization_type")
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+
+  @@map("organization_status")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+  QUALITY
+
+  @@map("membership_role")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("membership_status")
+}
+
+enum VerificationStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+
+  @@map("verification_status")
+}
+
+enum IndustrySchemaStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+
+  @@map("industry_schema_status")
+}
+
+enum RFQStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+
+  @@map("rfq_status")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+
+  @@map("invitation_status")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SUBMITTED
+  SUPERSEDED
+  WITHDRAWN
+  LOST
+
+  @@map("quote_status")
+}
+
+enum PurchaseOrderStatus {
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("purchase_order_status")
+}
+
+enum SampleStatus {
+  REQUESTED
+  IN_PREPARATION
+  SHIPPED
+  RECEIVED
+  REVISION_REQUESTED
+  APPROVED
+  REJECTED
+
+  @@map("sample_status")
+}
+
+enum MilestoneStatus {
+  PENDING
+  ACTIVE
+  DONE
+  BLOCKED
+
+  @@map("milestone_status")
+}
+
+enum ScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+
+  @@map("scan_status")
+}
+
+model PlatformAccount {
+  id              String              @id @default(uuid()) @db.Uuid
+  fullName        String              @map("full_name")
+  companyName     String              @map("company_name")
+  email           String              @unique
+  passwordHash    String              @map("password_hash")
+  accountType     PlatformAccountType @map("account_type")
+  isPlatformAdmin Boolean             @default(false) @map("is_platform_admin")
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  memberships      Membership[]
+  createdRfqs      Rfq[]           @relation("CreatedRFQs")
+  createdPos       PurchaseOrder[] @relation("CreatedPurchaseOrders")
+  decidedSamples   Sample[]        @relation("DecidedSamples")
+  uploadedEvidence EvidenceFile[]  @relation("UploadedEvidence")
+  auditEvents      AuditEvent[]    @relation("ActorAuditEvents")
+  refreshTokens    RefreshToken[]
+
+  @@index([accountType])
+  @@map("platform_accounts")
+}
+
+model Organization {
+  id          String             @id @default(uuid()) @db.Uuid
+  type        OrganizationType
+  legalName   String             @map("legal_name")
+  displayName String             @map("display_name")
+  countryCode String             @map("country_code") @db.Char(2)
+  status      OrganizationStatus @default(ACTIVE)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  memberships     Membership[]
+  supplierProfile SupplierProfile?
+  buyerRfqs       Rfq[]            @relation("BuyerRFQs")
+  supplierInvites RfqInvitation[]  @relation("SupplierInvitations")
+  quotes          Quote[]          @relation("SupplierQuotes")
+  buyerPos        PurchaseOrder[]  @relation("BuyerPurchaseOrders")
+  supplierPos     PurchaseOrder[]  @relation("SupplierPurchaseOrders")
+  evidenceFiles   EvidenceFile[]   @relation("EvidenceFiles")
+  auditEvents     AuditEvent[]     @relation("OrganizationAuditEvents")
+
+  @@index([type, status])
+  @@map("organizations")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  accountId      String           @map("account_id") @db.Uuid
+  role           MembershipRole
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account      PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, accountId])
+  @@index([accountId, status])
+  @@map("memberships")
+}
+
+model SupplierProfile {
+  organizationId     String             @id @map("organization_id") @db.Uuid
+  verificationStatus VerificationStatus @default(DRAFT) @map("verification_status")
+  capabilities       Json?              @db.JsonB
+  minOrderQuantity   Int?               @map("min_order_quantity")
+  leadTimeDays       Int?               @map("lead_time_days")
+  website            String?
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([verificationStatus])
+  @@map("supplier_profiles")
+}
+
+model Industry {
+  id     String  @id @default(uuid()) @db.Uuid
+  code   String  @unique
+  nameAr String  @map("name_ar")
+  active Boolean @default(true)
+
+  schemaVersions IndustrySchemaVersion[]
+  rfqs           Rfq[]
+
+  @@map("industries")
+}
+
+model IndustrySchemaVersion {
+  id          String               @id @default(uuid()) @db.Uuid
+  industryId  String               @map("industry_id") @db.Uuid
+  version     Int
+  schemaJson  Json                 @map("schema_json") @db.JsonB
+  status      IndustrySchemaStatus @default(DRAFT)
+  publishedAt DateTime?            @map("published_at") @db.Timestamptz(6)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  industry Industry @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  rfqs     Rfq[]
+
+  @@unique([industryId, version])
+  @@index([status])
+  @@map("industry_schema_versions")
+}
+
+model Rfq {
+  id                 String    @id @default(uuid()) @db.Uuid
+  buyerOrgId         String    @map("buyer_org_id") @db.Uuid
+  industryId         String    @map("industry_id") @db.Uuid
+  schemaVersionId    String    @map("schema_version_id") @db.Uuid
+  status             RFQStatus @default(DRAFT)
+  title              String
+  quantity           Int
+  unit               String
+  currency           String    @db.Char(3)
+  destination        String
+  targetDate         DateTime? @map("target_date") @db.Timestamptz(6)
+  requirements       Json      @db.JsonB
+  createdByAccountId String    @map("created_by_account_id") @db.Uuid
+  publishedAt        DateTime? @map("published_at") @db.Timestamptz(6)
+  closedAt           DateTime? @map("closed_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  buyerOrganization Organization          @relation("BuyerRFQs", fields: [buyerOrgId], references: [id], onDelete: Restrict)
+  industry          Industry              @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  schemaVersion     IndustrySchemaVersion @relation(fields: [schemaVersionId], references: [id], onDelete: Restrict)
+  createdBy         PlatformAccount       @relation("CreatedRFQs", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  invitations       RfqInvitation[]
+  quotes            Quote[]
+  purchaseOrder     PurchaseOrder?
+
+  @@index([buyerOrgId, status, createdAt])
+  @@index([industryId, status])
+  @@index([schemaVersionId])
+  @@map("rfqs")
+}
+
+model RfqInvitation {
+  id            String           @id @default(uuid()) @db.Uuid
+  rfqId         String           @map("rfq_id") @db.Uuid
+  supplierOrgId String           @map("supplier_org_id") @db.Uuid
+  status        InvitationStatus @default(PENDING)
+  sentAt        DateTime         @default(now()) @map("sent_at") @db.Timestamptz(6)
+  respondedAt   DateTime?        @map("responded_at") @db.Timestamptz(6)
+
+  rfq         Rfq          @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplierOrg Organization @relation("SupplierInvitations", fields: [supplierOrgId], references: [id], onDelete: Restrict)
+
+  @@unique([rfqId, supplierOrgId])
+  @@index([supplierOrgId, status])
+  @@map("rfq_invitations")
+}
+
+model Quote {
+  id            String      @id @default(uuid()) @db.Uuid
+  rfqId         String      @map("rfq_id") @db.Uuid
+  supplierOrgId String      @map("supplier_org_id") @db.Uuid
+  revision      Int
+  status        QuoteStatus @default(SUBMITTED)
+  currency      String      @db.Char(3)
+  leadTimeDays  Int         @map("lead_time_days")
+  validUntil    DateTime    @map("valid_until") @db.Timestamptz(6)
+  notes         String?
+  submittedAt   DateTime    @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rfq            Rfq             @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  supplierOrg    Organization    @relation("SupplierQuotes", fields: [supplierOrgId], references: [id], onDelete: Restrict)
+  lines          QuoteLine[]
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([rfqId, supplierOrgId, revision])
+  @@index([rfqId, status])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id              String @id @default(uuid()) @db.Uuid
+  quoteId         String @map("quote_id") @db.Uuid
+  name            String
+  quantity        Int
+  unitPriceCents  BigInt @map("unit_price_cents")
+  totalPriceCents BigInt @map("total_price_cents")
+  sortOrder       Int    @default(0) @map("sort_order")
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId, sortOrder])
+  @@map("quote_lines")
+}
+
+model PurchaseOrder {
+  id                  String              @id @default(uuid()) @db.Uuid
+  rfqId               String              @unique @map("rfq_id") @db.Uuid
+  quoteId             String              @map("quote_id") @db.Uuid
+  buyerOrgId          String              @map("buyer_org_id") @db.Uuid
+  supplierOrgId       String              @map("supplier_org_id") @db.Uuid
+  status              PurchaseOrderStatus @default(ACTIVE)
+  agreedTermsSnapshot Json                @map("agreed_terms_snapshot") @db.JsonB
+  createdByAccountId  String              @map("created_by_account_id") @db.Uuid
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rfq               Rfq                   @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  quote             Quote                 @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  buyerOrganization Organization          @relation("BuyerPurchaseOrders", fields: [buyerOrgId], references: [id], onDelete: Restrict)
+  supplierOrg       Organization          @relation("SupplierPurchaseOrders", fields: [supplierOrgId], references: [id], onDelete: Restrict)
+  createdBy         PlatformAccount       @relation("CreatedPurchaseOrders", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  samples           Sample[]
+  milestones        ProductionMilestone[]
+  evidenceFiles     EvidenceFile[]
+
+  @@index([buyerOrgId, status])
+  @@index([supplierOrgId, status])
+  @@map("purchase_orders")
+}
+
+model Sample {
+  id                 String       @id @default(uuid()) @db.Uuid
+  purchaseOrderId    String       @map("purchase_order_id") @db.Uuid
+  version            Int
+  status             SampleStatus @default(REQUESTED)
+  notes              String?
+  shippedAt          DateTime?    @map("shipped_at") @db.Timestamptz(6)
+  receivedAt         DateTime?    @map("received_at") @db.Timestamptz(6)
+  decidedAt          DateTime?    @map("decided_at") @db.Timestamptz(6)
+  decidedByAccountId String?      @map("decided_by_account_id") @db.Uuid
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  purchaseOrder PurchaseOrder    @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  decidedBy     PlatformAccount? @relation("DecidedSamples", fields: [decidedByAccountId], references: [id], onDelete: SetNull)
+
+  @@unique([purchaseOrderId, version])
+  @@index([status])
+  @@map("samples")
+}
+
+model ProductionMilestone {
+  id              String          @id @default(uuid()) @db.Uuid
+  purchaseOrderId String          @map("purchase_order_id") @db.Uuid
+  code            String
+  sequence        Int
+  status          MilestoneStatus @default(PENDING)
+  plannedAt       DateTime?       @map("planned_at") @db.Timestamptz(6)
+  completedAt     DateTime?       @map("completed_at") @db.Timestamptz(6)
+  note            String?
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  purchaseOrder PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  evidenceFiles EvidenceFile[]
+
+  @@unique([purchaseOrderId, code])
+  @@index([purchaseOrderId, sequence])
+  @@map("production_milestones")
+}
+
+model EvidenceFile {
+  id                  String     @id @default(uuid()) @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  purchaseOrderId     String?    @map("purchase_order_id") @db.Uuid
+  milestoneId         String?    @map("milestone_id") @db.Uuid
+  objectKey           String     @map("object_key")
+  checksum            String
+  mimeType            String     @map("mime_type")
+  sizeBytes           Int        @map("size_bytes")
+  classification      String
+  scanStatus          ScanStatus @default(PENDING) @map("scan_status")
+  uploadedByAccountId String     @map("uploaded_by_account_id") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization  Organization         @relation("EvidenceFiles", fields: [organizationId], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder?       @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  milestone     ProductionMilestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  uploadedBy    PlatformAccount      @relation("UploadedEvidence", fields: [uploadedByAccountId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([purchaseOrderId])
+  @@map("evidence_files")
+}
+
+model AuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorAccountId String?  @map("actor_account_id") @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  action         String
+  resourceType   String   @map("resource_type")
+  resourceId     String   @map("resource_id")
+  metadata       Json?    @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor        PlatformAccount? @relation("ActorAuditEvents", fields: [actorAccountId], references: [id], onDelete: SetNull)
+  organization Organization?    @relation("OrganizationAuditEvents", fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorAccountId, createdAt])
+  @@map("audit_events")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  eventType     String    @map("event_type")
+  payload       Json      @db.JsonB
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz(6)
+  attempts      Int       @default(0)
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox_events")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  accountId String    @map("account_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  account   PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}

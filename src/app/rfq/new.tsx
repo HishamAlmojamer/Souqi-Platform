@@ -1,0 +1,408 @@
+import { Link, router } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ApiFeedback } from '@/components/b2b/ApiFeedback';
+import { AppHeader } from '@/components/b2b/AppHeader';
+import { colors } from '@/components/b2b/palette';
+import {
+  errorMessage,
+  schemaFields,
+  useApiMutation,
+  useApiQuery,
+  type ApiIndustry,
+  type ApiRfq,
+  type ApiSchemaVersion,
+} from '@/data/api';
+import { useAuth } from '@/state/AuthContext';
+
+type FormValues = Record<string, string>;
+type IndustriesPayload = { industries: ApiIndustry[] };
+type VersionsPayload = { versions: ApiSchemaVersion[] };
+type CreatePayload = { rfq: ApiRfq };
+
+export default function NewRFQScreen() {
+  const { width } = useWindowDimensions();
+  const wide = width >= 920;
+  const { activeOrganization, hasPermission } = useAuth();
+  const industriesQuery = useApiQuery<IndustriesPayload>('/api/industries?pageSize=100');
+  const industries = industriesQuery.data?.industries ?? [];
+  const [industryId, setIndustryId] = useState('');
+  const [title, setTitle] = useState('');
+  const [quantity, setQuantity] = useState('2400');
+  const [unit, setUnit] = useState('قطعة');
+  const [currency, setCurrency] = useState('SAR');
+  const [destination, setDestination] = useState('الرياض، السعودية');
+  const [targetDate, setTargetDate] = useState('');
+  const [error, setError] = useState('');
+  const [formValues, setFormValues] = useState<FormValues>({});
+  const createRfq = useApiMutation<CreatePayload>();
+  const publishRfq = useApiMutation<{ rfq: ApiRfq }>();
+
+  const selectedIndustryId = industryId || industries[0]?.id || '';
+  const activeIndustry = industries.find((item) => item.id === selectedIndustryId) ?? industries[0];
+  const schemaQuery = useApiQuery<VersionsPayload>(
+    selectedIndustryId ? `/api/industries/${selectedIndustryId}/schemas?pageSize=100` : null,
+  );
+  const activeVersion = useMemo(() => {
+    const versions = schemaQuery.data?.versions ?? [];
+    return versions.find((version) => version.status === 'PUBLISHED') ?? versions[0];
+  }, [schemaQuery.data?.versions]);
+  const fields = useMemo(() => schemaFields(activeVersion?.schemaJson), [activeVersion?.schemaJson]);
+
+  const updateIndustry = (nextIndustryId: string) => {
+    setIndustryId(nextIndustryId);
+    setFormValues({});
+    setError('');
+  };
+
+  const updateField = (fieldId: string, value: string) => {
+    setFormValues((current) => ({ ...current, [fieldId]: value }));
+    setError('');
+  };
+
+  const handleSubmit = async (publish: boolean) => {
+    setError('');
+    const parsedQuantity = Number(quantity);
+    if (!title.trim()) {
+      setError('يرجى إدخال عنوان الطلب.');
+      return;
+    }
+    if (!Number.isSafeInteger(parsedQuantity) || parsedQuantity <= 0) {
+      setError('يرجى إدخال كمية صحيحة أكبر من صفر.');
+      return;
+    }
+    if (!unit.trim() || !destination.trim()) {
+      setError('يرجى تحديد وحدة القياس وجهة التسليم.');
+      return;
+    }
+    if (!/^[A-Za-z]{3}$/.test(currency.trim())) {
+      setError('يرجى إدخال رمز عملة من ثلاثة أحرف، مثل SAR.');
+      return;
+    }
+    if (activeOrganization?.type !== 'BUYER') {
+      setError('يلزم حساب تابع لمؤسسة مشتري لإنشاء طلب توريد.');
+      return;
+    }
+    if (!activeIndustry) {
+      setError('لم يتم تحميل القطاعات بعد، يرجى المحاولة مجددًا.');
+      return;
+    }
+    if (!activeVersion) {
+      setError('لا يوجد مخطط قطاع منشور لهذا القطاع بعد.');
+      return;
+    }
+
+    const missingRequired = fields.filter((field) => field.required && !(formValues[field.id] ?? '').trim());
+    if (missingRequired.length > 0) {
+      setError(`يرجى ملء الحقول المطلوبة: ${missingRequired.map((field) => field.label).join('، ')}`);
+      return;
+    }
+
+    let parsedTargetDate: string | null = null;
+    if (targetDate.trim()) {
+      const date = new Date(targetDate.trim());
+      if (Number.isNaN(date.getTime())) {
+        setError('صيغة الموعد غير صحيحة.');
+        return;
+      }
+      parsedTargetDate = date.toISOString();
+    }
+
+    const requirements = Object.fromEntries(fields.map((field) => {
+      const value = (formValues[field.id] ?? '').trim();
+      return [field.id, field.type === 'number' && value ? Number(value) : value];
+    }));
+
+    try {
+      const created = await createRfq.mutateAsync({
+        path: '/api/rfqs',
+        body: {
+          buyerOrgId: activeOrganization.id,
+          industryId: activeIndustry.id,
+          schemaVersionId: activeVersion.id,
+          title: title.trim(),
+          quantity: parsedQuantity,
+          unit: unit.trim(),
+          currency: currency.trim().toUpperCase(),
+          destination: destination.trim(),
+          targetDate: parsedTargetDate,
+          requirements,
+        },
+      });
+      if (publish && hasPermission('rfq.publish')) {
+        await publishRfq.mutateAsync({
+          path: `/api/rfqs/${created.rfq.id}/status`,
+          body: { status: 'PUBLISHED' },
+        });
+      }
+      router.replace({ pathname: '/rfq/[id]' as any, params: { id: created.rfq.id } } as any);
+    } catch (cause) {
+      setError(errorMessage(cause));
+    }
+  };
+
+  const loading = industriesQuery.isLoading || (Boolean(selectedIndustryId) && schemaQuery.isLoading);
+  const mutationError = createRfq.error ?? publishRfq.error;
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <AppHeader active="request" />
+      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+        <View style={[styles.content, wide && styles.contentWide]}>
+          <View style={styles.topRow}>
+            <View>
+              <Text style={styles.kicker}>إنشاء طلب توريد</Text>
+              <Text style={styles.pageTitle}>مصمّم طلبات التسعير حسب القطاع</Text>
+            </View>
+            <Link href={'/workspace' as any} asChild>
+              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonText}>← رجوع إلى المساحة</Text>
+              </Pressable>
+            </Link>
+          </View>
+
+          <Text style={styles.subTitle}>تُحفظ المواصفات وفق إصدار المخطط المنشور للقطاع وتُرسل إلى الخادم مباشرة.</Text>
+
+          <ApiFeedback
+            loading={loading}
+            error={industriesQuery.error ?? schemaQuery.error ?? mutationError}
+            empty={!loading && industries.length === 0}
+            emptyTitle="لا توجد قطاعات متاحة"
+            emptyBody="أضف قطاعًا وإصدار مخطط منشورًا من لوحة الإدارة، أو شغّل npm run seed:demo."
+            onRetry={() => { void industriesQuery.refetch(); void schemaQuery.refetch(); }}
+          />
+
+          {!loading && industries.length > 0 ? (
+            <View style={[styles.formCard, wide && styles.formCardWide]}>
+              <View style={styles.sectorPickerSection}>
+                <Text style={styles.sectionLabel}>القطاع</Text>
+                <View style={styles.sectorGrid}>
+                  {industries.map((industry) => (
+                    <Pressable
+                      key={industry.id}
+                      accessibilityRole="button"
+                      onPress={() => updateIndustry(industry.id)}
+                      style={[styles.sectorChip, industry.id === selectedIndustryId && styles.sectorChipActive]}
+                    >
+                      <Text style={[styles.sectorChipText, industry.id === selectedIndustryId && styles.sectorChipTextActive]}>
+                        {industry.nameAr}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>عنوان الطلب</Text>
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  style={styles.input}
+                  placeholder="مثال: قمصان قطنية لعلامة نواة"
+                  placeholderTextColor="#8A948D"
+                  textAlign="right"
+                />
+              </View>
+
+              <View style={styles.basicFields}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>الكمية المطلوبة</Text>
+                  <TextInput
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="مثل: 2400"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>الوحدة</Text>
+                  <TextInput
+                    value={unit}
+                    onChangeText={setUnit}
+                    style={styles.input}
+                    placeholder="قطعة / عبوة / متر"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.basicFields}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>العملة</Text>
+                  <TextInput
+                    value={currency}
+                    onChangeText={setCurrency}
+                    style={styles.input}
+                    maxLength={3}
+                    autoCapitalize="characters"
+                    placeholder="SAR"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>الموعد المستهدف (اختياري)</Text>
+                  <TextInput
+                    value={targetDate}
+                    onChangeText={setTargetDate}
+                    style={styles.input}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>جهة التسليم</Text>
+                <TextInput
+                  value={destination}
+                  onChangeText={setDestination}
+                  style={styles.input}
+                  placeholder="المدينة والدولة"
+                  placeholderTextColor="#8A948D"
+                  textAlign="right"
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              {activeVersion ? (
+                <Text style={styles.schemaNote}>مخطط القطاع: الإصدار {activeVersion.version}</Text>
+              ) : null}
+              {fields.map((field) => (
+                <View key={field.id} style={styles.fieldGroup}>
+                  <Text style={styles.label}>
+                    {field.label}
+                    {field.required ? <Text style={styles.required}> *</Text> : null}
+                  </Text>
+
+                  {field.type === 'choice' ? (
+                    <View style={styles.choiceList}>
+                      {(field.options ?? []).map((option) => (
+                        <Pressable
+                          key={option}
+                          accessibilityRole="button"
+                          onPress={() => updateField(field.id, option)}
+                          style={[
+                            styles.choiceButton,
+                            (formValues[field.id] ?? '') === option && styles.choiceButtonSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.choiceText,
+                              (formValues[field.id] ?? '') === option && styles.choiceTextSelected,
+                            ]}
+                          >
+                            {option}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : (
+                    <TextInput
+                      value={formValues[field.id] ?? ''}
+                      onChangeText={(value) => updateField(field.id, value)}
+                      style={styles.input}
+                      placeholder={field.placeholder}
+                      placeholderTextColor="#8A948D"
+                      textAlign="right"
+                      keyboardType={field.type === 'number' ? 'numeric' : 'default'}
+                      multiline={field.type !== 'number'}
+                    />
+                  )}
+                </View>
+              ))}
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <View style={styles.actions}>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={createRfq.isPending || publishRfq.isPending}
+                  onPress={() => { void handleSubmit(true); }}
+                  style={[styles.primaryButton, (createRfq.isPending || publishRfq.isPending) && styles.buttonDisabled]}
+                >
+                  <Text style={styles.primaryButtonText}>حفظ ونشر الطلب</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={createRfq.isPending || publishRfq.isPending}
+                  onPress={() => { void handleSubmit(false); }}
+                  style={styles.ghostButton}
+                >
+                  <Text style={styles.ghostButtonText}>حفظ كمسودة</Text>
+                </Pressable>
+                <Link href={'/workspace' as any} asChild>
+                  <Pressable accessibilityRole="button" style={styles.ghostButton}>
+                    <Text style={styles.ghostButtonText}>إلغاء</Text>
+                  </Pressable>
+                </Link>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.cream },
+  page: { paddingBottom: 32, paddingHorizontal: 18 },
+  content: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingTop: 28 },
+  contentWide: { paddingTop: 32 },
+  topRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
+  kicker: { fontSize: 11, fontWeight: '800', color: colors.green, textAlign: 'right', writingDirection: 'rtl' },
+  pageTitle: { fontSize: 28, fontWeight: '900', color: colors.ink, marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
+  subTitle: { fontSize: 12, color: colors.muted, marginTop: 10, marginBottom: 16, textAlign: 'right', writingDirection: 'rtl' },
+  secondaryButton: { minHeight: 42, borderRadius: 8, paddingHorizontal: 14, backgroundColor: colors.greenLight, justifyContent: 'center' },
+  secondaryButtonText: { color: colors.greenDark, fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
+  formCard: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 18, marginTop: 16 },
+  formCardWide: { padding: 22 },
+  sectorPickerSection: { marginBottom: 14 },
+  sectionLabel: { fontSize: 12, fontWeight: '800', color: colors.ink, marginBottom: 10, textAlign: 'right', writingDirection: 'rtl' },
+  sectorGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10 },
+  sectorChip: { backgroundColor: '#F2F4F0', borderWidth: 1, borderColor: colors.line, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10 },
+  sectorChipActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
+  sectorChipText: { fontSize: 11, fontWeight: '700', color: colors.inkSoft, writingDirection: 'rtl' },
+  sectorChipTextActive: { color: '#FFF', writingDirection: 'rtl' },
+  basicFields: { flexDirection: 'row-reverse', gap: 12 },
+  fieldGroup: { marginTop: 14 },
+  label: { fontSize: 12, fontWeight: '800', color: colors.ink, marginBottom: 8, textAlign: 'right', writingDirection: 'rtl' },
+  required: { color: colors.red },
+  input: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: '#FBFBF9',
+    borderRadius: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.ink,
+    fontSize: 12,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  choiceList: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+  choiceButton: { borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 },
+  choiceButtonSelected: { borderColor: colors.greenDark, backgroundColor: colors.greenLight },
+  choiceText: { fontSize: 10, color: colors.inkSoft, writingDirection: 'rtl' },
+  choiceTextSelected: { color: colors.greenDark, fontWeight: '800' },
+  divider: { height: 1, backgroundColor: colors.line, marginTop: 18, marginBottom: 2 },
+  schemaNote: { color: colors.muted, fontSize: 10, marginTop: 14, textAlign: 'right', writingDirection: 'rtl' },
+  error: { color: colors.red, fontSize: 11, marginTop: 14, textAlign: 'right', writingDirection: 'rtl' },
+  actions: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 22, gap: 12 },
+  primaryButton: { flexGrow: 1, minHeight: 48, borderRadius: 9, backgroundColor: colors.greenDark, alignItems: 'center', justifyContent: 'center' },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', writingDirection: 'rtl' },
+  buttonDisabled: { opacity: 0.6 },
+  ghostButton: { minWidth: 110, minHeight: 48, borderRadius: 9, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  ghostButtonText: { color: colors.inkSoft, fontSize: 11, fontWeight: '700', writingDirection: 'rtl' },
+});

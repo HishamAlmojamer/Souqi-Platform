@@ -1,0 +1,21 @@
+services:
+  database:
+    image: postgis/postgis:16-3.5
+    container_name: souqi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: souqi_dev
+      POSTGRES_USER: souqi_dev
+      POSTGRES_PASSWORD: souqi_local_dev_only
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - souqi-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U souqi_dev -d souqi_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  souqi-postgres-data:
