@@ -32,6 +32,24 @@ npm run web
 
 لفتح خيارات Expo الأخرى أو استخدام Expo Go، شغّل `npm start` ثم امسح رمز QR أو اختر محاكي Android مهيأ.
 
+## النشر على Vercel
+
+ملف `vercel.json` في جذر المشروع يضبط البناء والمسارات:
+
+- أمر البناء: `expo export -p web`
+- مجلد الإخراج: `dist`
+- إعادة كتابة كل المسارات إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
+
+عند ربط المشروع بـ Vercel:
+
+1. تأكد أن `Root Directory` يشير إلى جذر المشروع الذي يحتوي على `package.json` و`app.json`.
+2. اترك `Framework Preset` على `Other`؛ الإعدادات موجودة في `vercel.json`.
+3. أضف متغير البيئة `EXPO_PUBLIC_API_URL` في Vercel قبل البناء، وقيمته عنوان API المنشور مثل `https://api.example.com`، وليس `localhost`.
+4. انشر خادم Express والقاعدة بيانات بشكل منفصل، وأضف نطاق Vercel إلى `ALLOWED_ORIGINS` في بيئة الخادم.
+5. بعد تعديل `vercel.json` أو متغيرات البيئة، أعد النشر (Redeploy) وليس فقط إعادة البناء من الكاش.
+
+إذا ظهر `404 NOT_FOUND` مع معرّف مثل `bom1::...` فهذا يعني أن Vercel لم يجد ملف `index.html` الناتج، غالبًا بسبب ضبط مجلد إخراج خاطئ أو غياب إعادة كتابة SPA؛ تحقق من خطوات البناء في لوحة Vercel ثم أعد النشر.
+
 ## API والمصادقة وقاعدة البيانات
 
 يوجد خادم تطوير Express في `server/index.ts`، ومخطط PostgreSQL في Prisma. حسابات منصة B2B محفوظة في `platform_accounts`. كلمات المرور تُجزّأ بـ bcrypt. رموز الوصول JWT تنتهي بعد 15 دقيقة، ورموز التحديد تُخزّن كـ hash في `refresh_tokens` وتدور لمدة 30 يومًا. الجلسة محفوظة محليًا عبر AsyncStorage، ويتم تجديد الرمز تلقائيًا عند انتهائه.
