@@ -38,15 +38,18 @@ npm run web
 
 - أمر البناء: `expo export -p web`
 - مجلد الإخراج: `dist`
-- إعادة كتابة كل المسارات إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
+- إعادة كتابة كل مسارات الواجهة إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
+- دوال Vercel الموجودة في مجلد `api/` تخدم مسارات `/api/*` على نفس النطاق.
+
+يضبط `.env.production` المتغير `EXPO_PUBLIC_API_URL=https://souqi-platform.vercel.app`، لذا لا حاجة إلى `localhost` أو إعداد CORS إضافي للواجهة المنشورة.
 
 عند ربط المشروع بـ Vercel:
 
 1. تأكد أن `Root Directory` يشير إلى جذر المشروع الذي يحتوي على `package.json` و`app.json`.
 2. اترك `Framework Preset` على `Other`؛ الإعدادات موجودة في `vercel.json`.
-3. أضف متغير البيئة `EXPO_PUBLIC_API_URL` في Vercel قبل البناء، وقيمته عنوان API المنشور مثل `https://api.example.com`، وليس `localhost`.
-4. انشر خادم Express والقاعدة بيانات بشكل منفصل، وأضف نطاق Vercel إلى `ALLOWED_ORIGINS` في بيئة الخادم.
-5. بعد تعديل `vercel.json` أو متغيرات البيئة، أعد النشر (Redeploy) وليس فقط إعادة البناء من الكاش.
+3. بعد تعديل `vercel.json` أو ملفات `api/`، أعد النشر (Redeploy) وليس فقط إعادة البناء من الكاش.
+
+دوال `api/` تستخدم حاليًا مخزنًا في الذاكرة عبر `server/memory-api.ts`؛ لذلك يعمل التسجيل وتسجيل الدخول فورًا، لكن البيانات تُعاد تهيئتها عند إعادة النشر أو إعادة تشغيل الدالة. للإنتاج الدائم، انشر خادم Express في `server/index.ts` مع PostgreSQL، ثم وجّه `EXPO_PUBLIC_API_URL` إلى عنوانه وأضف نطاق Vercel إلى `ALLOWED_ORIGINS`.
 
 إذا ظهر `404 NOT_FOUND` مع معرّف مثل `bom1::...` فهذا يعني أن Vercel لم يجد ملف `index.html` الناتج، غالبًا بسبب ضبط مجلد إخراج خاطئ أو غياب إعادة كتابة SPA؛ تحقق من خطوات البناء في لوحة Vercel ثم أعد النشر.
 
