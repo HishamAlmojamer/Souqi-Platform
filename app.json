@@ -2,7 +2,7 @@
   "expo": {
     "name": "سوقي",
     "slug": "souqi",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "scheme": "souqi",
     "plugins": ["expo-router"],

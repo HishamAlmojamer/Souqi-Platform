@@ -39,7 +39,7 @@ npm run web
 - أمر البناء: `npm run build:vercel` (يمسح كاش Metro قبل `expo export -p web` لضمان حزمة JavaScript جديدة)
 - مجلد الإخراج: `dist`
 - إعادة كتابة كل مسارات الواجهة إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
-- دوال Vercel الموجودة في مجلد `api/` تخدم مسارات `/api/*` على نفس النطاق.
+- مجلدا `api/` و`server/` مستبعدان من نشر Vercel عبر `.vercelignore`؛ تعمل الواجهة حالياً بوضع تجريبي محلي على الويب إذا تعذّر الوصول إلى API.
 
 يضبط `.env.production` المتغير `EXPO_PUBLIC_API_URL=https://souqi-platform.vercel.app`، لذا لا حاجة إلى `localhost` أو إعداد CORS إضافي للواجهة المنشورة.
 
@@ -51,7 +51,7 @@ npm run web
 4. تستبعد إعادة الكتابة مسارات `api/` و`_expo/` و`assets/` حتى تصل طلبات الواجهة والدوال إلى وجهتها الصحيحة.
 5. للتحقق، افتح `/api/health`؛ يجب أن يعيد JSON، وتأكد أن hash حزمة JavaScript في `index.html` تغيّر عن النسخة القديمة `entry-a5281059f316960a847686dc72aa0593.js`.
 
-دوال `api/` تستخدم حاليًا مخزنًا في الذاكرة عبر `server/memory-api.ts`؛ لذلك يعمل التسجيل وتسجيل الدخول فورًا، لكن البيانات تُعاد تهيئتها عند إعادة النشر أو إعادة تشغيل الدالة. للإنتاج الدائم، انشر خادم Express في `server/index.ts` مع PostgreSQL، ثم وجّه `EXPO_PUBLIC_API_URL` إلى عنوانه وأضف نطاق Vercel إلى `ALLOWED_ORIGINS`.
+دوال `api/` تستخدم مخزنًا في الذاكرة عبر `server/memory-api.ts` وهي جاهزة للنشر عند توفر بنية دوال Vercel. أثناء عدم توفرها، يستخدم تسجيل الدخول والتسجيل على الويب تخزينًا محليًا تجريبيًا في AsyncStorage؛ البيانات تبقى في المتصفح فقط. للإنتاج الدائم، انشر خادم Express في `server/index.ts` مع PostgreSQL، ثم وجّه `EXPO_PUBLIC_API_URL` إلى عنوانه وأضف نطاق Vercel إلى `ALLOWED_ORIGINS`.
 
 إذا ظهر `404 NOT_FOUND` مع معرّف مثل `bom1::...` فهذا يعني أن Vercel لم يجد ملف `index.html` الناتج، غالبًا بسبب ضبط مجلد إخراج خاطئ أو غياب إعادة كتابة SPA؛ تحقق من خطوات البناء في لوحة Vercel ثم أعد النشر.
 

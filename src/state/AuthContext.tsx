@@ -121,6 +121,74 @@ function ensureJson(response: Response) {
   }
 }
 
+const LOCAL_ACCOUNTS_KEY = 'souqi.auth.local-accounts.v1';
+
+type LocalAccountRecord = AuthAccount & { passwordSalt: string; passwordHash: string };
+
+function randomHex(bytes: number) {
+  const values = new Uint8Array(bytes);
+  crypto.getRandomValues(values);
+  return Array.from(values, (value) => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function hashPassword(password: string, salt: string) {
+  const data = new TextEncoder().encode(`${salt}:${password}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function readLocalAccounts(): Promise<LocalAccountRecord[]> {
+  const raw = await AsyncStorage.getItem(LOCAL_ACCOUNTS_KEY);
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw) as LocalAccountRecord[];
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+async function localRegister(input: RegisterInput): Promise<AuthResult> {
+  const accounts = await readLocalAccounts();
+  const email = input.email.trim().toLowerCase();
+  if (accounts.some((item) => item.email.toLowerCase() === email)) {
+    const error = new Error('البريد الإلكتروني مستخدم بالفعل.') as AuthError;
+    error.code = 'EMAIL_ALREADY_EXISTS';
+    throw error;
+  }
+  const salt = randomHex(16);
+  const account: AuthAccount = {
+    id: randomHex(16),
+    fullName: input.fullName,
+    companyName: input.companyName,
+    email,
+    accountType: input.accountType,
+    createdAt: new Date().toISOString(),
+  };
+  accounts.push({ ...account, passwordSalt: salt, passwordHash: await hashPassword(input.password, salt) });
+  await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+  return { account, token: randomHex(32), refreshToken: randomHex(32) };
+}
+
+async function localLogin(email: string, password: string): Promise<AuthResult> {
+  const accounts = await readLocalAccounts();
+  const normalized = email.trim().toLowerCase();
+  const record = accounts.find((item) => item.email.toLowerCase() === normalized);
+  if (!record || await hashPassword(password, record.passwordSalt) !== record.passwordHash) {
+    throw new Error('بيانات الدخول غير صحيحة.');
+  }
+  const account: AuthAccount = {
+    id: record.id,
+    fullName: record.fullName,
+    companyName: record.companyName,
+    email: record.email,
+    accountType: record.accountType,
+    createdAt: record.createdAt,
+    isPlatformAdmin: record.isPlatformAdmin,
+  };
+  return { account, token: randomHex(32), refreshToken: randomHex(32) };
+}
+
 function toAuthError(payload: ErrorPayload) {
   const validationMessage = payload.details ? Object.values(payload.details).flat()[0] : undefined;
   const authError = new Error(validationMessage ?? payload.error ?? payload.message ?? 'تعذر إكمال المصادقة.') as AuthError;
@@ -144,11 +212,17 @@ async function fetchMe(token: string, account?: AuthAccount): Promise<MeResult> 
     response = await fetch(`${apiBaseUrl()}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    ensureJson(response);
   } catch {
-    throw new Error('تعذر الاتصال بالخادم. تأكد من تشغيل API وإمكانية الوصول إلى عنوانه.');
+    const role: AppRole = account?.isPlatformAdmin ? 'PLATFORM_ADMIN' : 'MEMBER';
+    return {
+      account: account as AuthAccount,
+      role,
+      permissions: ROLE_PERMISSION_KEYS[role],
+      memberships: [],
+    };
   }
 
-  ensureJson(response);
   const result = await parseJson(response);
   if (!response.ok) {
     throw toAuthError(result as ErrorPayload);
@@ -258,11 +332,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      ensureJson(response);
     } catch {
-      throw new Error('تعذر الاتصال بالخادم. تأكد من تشغيل API وإمكانية الوصول إلى عنوانه.');
+      if (Platform.OS !== 'web') {
+        throw new Error('تعذر الاتصال بالخادم. تأكد من تشغيل API وإمكانية الوصول إلى عنوانه.');
+      }
+      const payload = body as RegisterInput & { email: string; password: string };
+      const authResult = path.includes('register')
+        ? await localRegister(payload)
+        : await localLogin(payload.email, payload.password);
+      const me = await fetchMe(authResult.token, authResult.account);
+      await persist({ ...me, token: authResult.token, refreshToken: authResult.refreshToken });
+      return;
     }
 
-    ensureJson(response);
     const result = await parseJson(response);
     if (!response.ok) {
       throw toAuthError(result as ErrorPayload);
