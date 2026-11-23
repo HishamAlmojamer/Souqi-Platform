@@ -36,7 +36,7 @@ npm run web
 
 ملف `vercel.json` في جذر المشروع يضبط البناء والمسارات:
 
-- أمر البناء: `expo export -p web`
+- أمر البناء: `npm run build:vercel` (يمسح كاش Metro قبل `expo export -p web` لضمان حزمة JavaScript جديدة)
 - مجلد الإخراج: `dist`
 - إعادة كتابة كل مسارات الواجهة إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
 - دوال Vercel الموجودة في مجلد `api/` تخدم مسارات `/api/*` على نفس النطاق.
