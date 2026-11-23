@@ -106,7 +106,7 @@ type MeResult = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function apiBaseUrl() {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const baseUrl = (process.env.EXPO_PUBLIC_API_URL ?? '').trim();
   if (!baseUrl) {
     throw new Error('إعداد عنوان الخادم غير موجود. أضف EXPO_PUBLIC_API_URL إلى ملف البيئة وأعد تشغيل التطبيق.');
   }
