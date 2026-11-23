@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import {
   createContext,
   useCallback,
@@ -107,10 +108,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function apiBaseUrl() {
   const baseUrl = (process.env.EXPO_PUBLIC_API_URL ?? '').trim();
-  if (!baseUrl) {
+  if (!baseUrl && Platform.OS !== 'web') {
     throw new Error('إعداد عنوان الخادم غير موجود. أضف EXPO_PUBLIC_API_URL إلى ملف البيئة وأعد تشغيل التطبيق.');
   }
   return baseUrl.replace(/\/$/, '');
+}
+
+function ensureJson(response: Response) {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('مسار API غير متاح في النسخة المنشورة الحالية. أعد نشر أحدث إصدار من المنصة.');
+  }
 }
 
 function toAuthError(payload: ErrorPayload) {
@@ -140,6 +148,7 @@ async function fetchMe(token: string, account?: AuthAccount): Promise<MeResult> 
     throw new Error('تعذر الاتصال بالخادم. تأكد من تشغيل API وإمكانية الوصول إلى عنوانه.');
   }
 
+  ensureJson(response);
   const result = await parseJson(response);
   if (!response.ok) {
     throw toAuthError(result as ErrorPayload);
@@ -173,6 +182,7 @@ async function rotateTokens(refreshToken: string): Promise<AuthResult> {
     throw new Error('تعذر تجديد الجلسة. تحقق من اتصالك بالخادم.');
   }
 
+  ensureJson(response);
   const result = await parseJson(response);
   if (!response.ok || !result.token || !result.refreshToken || !result.account) {
     throw toAuthError(result as ErrorPayload);
@@ -252,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('تعذر الاتصال بالخادم. تأكد من تشغيل API وإمكانية الوصول إلى عنوانه.');
     }
 
+    ensureJson(response);
     const result = await parseJson(response);
     if (!response.ok) {
       throw toAuthError(result as ErrorPayload);
