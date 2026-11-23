@@ -48,6 +48,8 @@ npm run web
 1. تأكد أن `Root Directory` يشير إلى جذر المشروع الذي يحتوي على `package.json` و`app.json`.
 2. اترك `Framework Preset` على `Other`؛ الإعدادات موجودة في `vercel.json`.
 3. بعد تعديل `vercel.json` أو ملفات `api/`، أعد النشر (Redeploy) وليس فقط إعادة البناء من الكاش.
+4. تستبعد إعادة الكتابة مسارات `api/` و`_expo/` و`assets/` حتى تصل طلبات الواجهة والدوال إلى وجهتها الصحيحة.
+5. للتحقق، افتح `/api/health`؛ يجب أن يعيد JSON، وتأكد أن hash حزمة JavaScript في `index.html` تغيّر عن النسخة القديمة `entry-a5281059f316960a847686dc72aa0593.js`.
 
 دوال `api/` تستخدم حاليًا مخزنًا في الذاكرة عبر `server/memory-api.ts`؛ لذلك يعمل التسجيل وتسجيل الدخول فورًا، لكن البيانات تُعاد تهيئتها عند إعادة النشر أو إعادة تشغيل الدالة. للإنتاج الدائم، انشر خادم Express في `server/index.ts` مع PostgreSQL، ثم وجّه `EXPO_PUBLIC_API_URL` إلى عنوانه وأضف نطاق Vercel إلى `ALLOWED_ORIGINS`.
 

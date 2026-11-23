@@ -1,6 +1,6 @@
 {
   "name": "souqi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "expo-router/entry",
   "dependencies": {
     "@prisma/client": "^6.19.0",
