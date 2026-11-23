@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { formatNumber, supplierCapabilities, useApiQuery, type ApiSupplier } from '@/data/api';
 
 const countryLabels: Record<string, string> = {
@@ -21,8 +22,8 @@ const countryLabels: Record<string, string> = {
 type SuppliersPayload = { suppliers: ApiSupplier[] };
 
 export default function SuppliersDashboardScreen() {
-  const { width } = useWindowDimensions();
-  const wide = width >= 920;
+  const { isDesktop, gutter } = useResponsive();
+  const wide = isDesktop;
   const suppliersQuery = useApiQuery<SuppliersPayload>('/api/suppliers?pageSize=100');
   const suppliers = suppliersQuery.data?.suppliers ?? [];
   const capabilities = suppliers.map((supplier) => supplierCapabilities(supplier.supplierProfile));
@@ -33,7 +34,7 @@ export default function SuppliersDashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="suppliers" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
@@ -187,10 +188,10 @@ function ActionRow({ href, label, description }: { href: string; label: string; 
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 30, paddingHorizontal: 18 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: 28 },
-  headingRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  headingCopy: { flex: 1, alignItems: 'flex-end' },
+  page: { paddingBottom: 30 },
+  content: { ...containerStyle, paddingTop: 28 },
+  headingRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  headingCopy: { flex: 1, minWidth: 220, alignItems: 'flex-end' },
   kicker: { color: colors.goldDeep, fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
   pageTitle: { color: colors.ink, fontSize: 28, fontWeight: '900', marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
   pageSubtitle: { color: colors.muted, fontSize: 10, marginTop: 6, textAlign: 'right', writingDirection: 'rtl' },
@@ -204,14 +205,14 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.ink, fontSize: 25, fontWeight: '900', marginTop: 12, textAlign: 'right' },
   metricDetail: { color: '#849088', fontSize: 9, marginTop: 4, writingDirection: 'rtl' },
   grid: { marginTop: 24, gap: 18 },
-  gridWide: { flexDirection: 'row-reverse', alignItems: 'flex-start' },
-  mainColumn: { flex: 1.5 },
-  sideColumn: { flex: 0.8 },
+  gridWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start' },
+  mainColumn: { flex: 1.5, minWidth: 280 },
+  sideColumn: { flex: 0.8, minWidth: 260 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '900', marginBottom: 12, textAlign: 'right', writingDirection: 'rtl' },
   list: { gap: 12 },
   card: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 15 },
-  cardHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  cardHeaderText: { flex: 1, alignItems: 'flex-end' },
+  cardHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  cardHeaderText: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
   name: { color: colors.ink, fontSize: 15, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   meta: { color: colors.muted, fontSize: 10, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   badge: { minHeight: 24, paddingHorizontal: 8, borderRadius: 6, justifyContent: 'center' },

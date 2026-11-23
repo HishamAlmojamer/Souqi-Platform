@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AuthLayout, authStyles } from '@/components/b2b/AuthLayout';
 import { colors } from '@/components/b2b/palette';
+import { useResponsive } from '@/components/b2b/responsive';
 import { safeDestination, withNext } from '@/data/navigation';
 import { isEmailAlreadyExistsError, useAuth } from '@/state/AuthContext';
 
@@ -24,6 +25,7 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ next?: string }>();
+  const { isCompact } = useResponsive();
 
   async function handleSubmit() {
     setMessage('');
@@ -65,7 +67,7 @@ export default function RegisterScreen() {
       asideTitle="ابدأ بملف واضح لشركتك."
       asideText="اختر نوع حسابك الآن. يمكن إضافة التحقق وإدارة الصلاحيات عند ربط المنصة بخدمة مصادقة فعلية."
     >
-      <View style={authStyles.card}>
+      <View style={[authStyles.card, isCompact && authStyles.cardCompact]}>
         <View style={styles.twoFields}>
           <View style={[authStyles.field, styles.halfField]}>
             <Text style={authStyles.label}>الاسم الكامل</Text>
@@ -171,8 +173,8 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  twoFields: { flexDirection: 'row-reverse', gap: 9 },
-  halfField: { flex: 1 },
+  twoFields: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 9 },
+  halfField: { flex: 1, minWidth: 150 },
   feedbackBox: { marginTop: 10, gap: 4 },
   feedbackLink: { fontSize: 9, textAlign: 'right', writingDirection: 'rtl' },
 });

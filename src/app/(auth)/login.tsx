@@ -4,6 +4,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { AuthLayout, authStyles } from '@/components/b2b/AuthLayout';
 import { colors } from '@/components/b2b/palette';
+import { useResponsive } from '@/components/b2b/responsive';
 import { safeDestination, withNext } from '@/data/navigation';
 import { useAuth } from '@/state/AuthContext';
 
@@ -17,6 +18,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ next?: string }>();
+  const { isCompact } = useResponsive();
 
   async function handleSubmit() {
     setMessage('');
@@ -48,7 +50,7 @@ export default function LoginScreen() {
       asideTitle="قرارات التوريد تبدأ من صورة واضحة."
       asideText="مساحة واحدة لمراجعة احتياجك، مقارنة عروض الموردين، ومتابعة مراحل التصنيع."
     >
-      <View style={authStyles.card}>
+      <View style={[authStyles.card, isCompact && authStyles.cardCompact]}>
         <View style={authStyles.field}>
           <Text style={authStyles.label}>البريد الإلكتروني</Text>
           <TextInput

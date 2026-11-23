@@ -1,11 +1,12 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors, radii, shadows, spacing } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { StatusPill } from '@/components/b2b/StatusPill';
 import { fonts } from '@/components/b2b/typography';
 import {
@@ -28,7 +29,7 @@ type OrderFilter = typeof filters[number]['id'];
 type RfqsPayload = { rfqs: ApiRfq[] };
 
 export default function OrdersScreen() {
-  const { width } = useWindowDimensions();
+  const { width, gutter } = useResponsive();
   const wide = width >= 820;
   const [activeFilter, setActiveFilter] = useState<OrderFilter>('all');
   const [search, setSearch] = useState('');
@@ -57,7 +58,7 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="orders" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={[styles.headingRow, wide && styles.headingRowWide]}>
             <View style={styles.headingCopy}>
@@ -189,11 +190,11 @@ function SummaryMetric({ label, value, tone }: { label: string; value: string; t
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 30, paddingHorizontal: 20 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: 28 },
+  page: { paddingBottom: 30 },
+  content: { ...containerStyle, paddingTop: 28 },
   headingRow: { flexDirection: 'column', alignItems: 'flex-end', gap: 14 },
-  headingRowWide: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
-  headingCopy: { alignItems: 'flex-end', flex: 1 },
+  headingRowWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  headingCopy: { alignItems: 'flex-end', flex: 1, minWidth: 220 },
   kicker: { color: colors.accentDark, fontFamily: fonts.semiBold, fontSize: 12, writingDirection: 'rtl' },
   pageTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 28, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
   pageDescription: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 13, marginTop: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
@@ -215,22 +216,22 @@ const styles = StyleSheet.create({
   searchBox: { minHeight: 44, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8, flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 12 },
   searchGlyph: { color: colors.green, fontSize: 20, marginLeft: 8 },
   searchInput: { flex: 1, paddingVertical: 8, color: colors.ink, fontSize: 11, writingDirection: 'rtl' },
-  filters: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7, paddingVertical: 2 },
+  filters: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 2 },
   filterButton: { minHeight: 34, borderWidth: 1, borderColor: colors.line, borderRadius: 7, backgroundColor: colors.paper, paddingHorizontal: 10, flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
   filterButtonActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
   filterText: { color: colors.inkSoft, fontSize: 9, fontWeight: '700', writingDirection: 'rtl' },
   filterTextActive: { color: '#FFFFFF' },
   filterCount: { color: colors.muted, fontSize: 8, fontWeight: '800' },
   filterCountActive: { color: '#D6E4DC' },
-  listHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 9 },
+  listHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 9 },
   listTitle: { color: colors.ink, fontSize: 14, fontWeight: '900', writingDirection: 'rtl' },
   resultCount: { color: colors.muted, fontSize: 9, writingDirection: 'rtl' },
   orderRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, padding: spacing.lg, marginBottom: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, ...shadows.soft },
   orderRowPressed: { borderColor: colors.green, backgroundColor: '#F8FBF7' },
   rowArrow: { width: 28, height: 28, borderRadius: 7, backgroundColor: colors.greenLight, alignItems: 'center', justifyContent: 'center' },
   rowArrowText: { color: colors.green, fontSize: 14, fontWeight: '900' },
-  rowContent: { flex: 1 },
-  rowTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  rowContent: { flex: 1, minWidth: 0 },
+  rowTop: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   statusGroup: { flexDirection: 'row-reverse', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   orderId: { color: colors.muted, fontSize: 8, writingDirection: 'rtl' },
   orderTitle: { flexShrink: 1, color: colors.ink, fontSize: 12, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },

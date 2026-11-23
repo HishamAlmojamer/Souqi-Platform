@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
   errorMessage,
   formatDate,
@@ -32,6 +33,7 @@ export default function RFQDetailScreen() {
   const { hasPermission } = useAuth();
   const [actionError, setActionError] = useState('');
   const [awardedPoId, setAwardedPoId] = useState('');
+  const { gutter } = useResponsive();
   const rfqQuery = useApiQuery<RfqPayload>(id ? `/api/rfqs/${id}` : null);
   const quotesQuery = useApiQuery<QuotesPayload>(id ? `/api/rfqs/${id}/quotes?pageSize=100` : null);
   const rfq = rfqQuery.data?.rfq;
@@ -69,7 +71,7 @@ export default function RFQDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="orders" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/workspace' as any} asChild>
@@ -256,17 +258,17 @@ function TimelineStep({ title, note, done, active }: { title: string; note: stri
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 30, paddingHorizontal: 18 },
-  content: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingTop: 28 },
-  topRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  page: { paddingBottom: 30 },
+  content: { ...containerStyle, paddingTop: 28 },
+  topRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   headerMeta: { alignItems: 'flex-end' },
   kicker: { fontSize: 11, color: colors.green, fontWeight: '800', writingDirection: 'rtl' },
   requestId: { fontSize: 14, color: colors.ink, fontWeight: '800', marginTop: 4, writingDirection: 'rtl' },
   secondaryButton: { minHeight: 42, paddingHorizontal: 14, borderRadius: 8, backgroundColor: colors.greenLight, alignItems: 'center', justifyContent: 'center' },
   secondaryButtonText: { color: colors.greenDark, fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
   summaryCard: { marginTop: 18, backgroundColor: colors.paper, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 18 },
-  summaryHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  title: { fontSize: 24, fontWeight: '900', color: colors.ink, textAlign: 'right', flexShrink: 1, writingDirection: 'rtl' },
+  summaryHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  title: { fontSize: 24, fontWeight: '900', color: colors.ink, textAlign: 'right', flexShrink: 1, minWidth: 0, writingDirection: 'rtl' },
   summary: { fontSize: 12, color: colors.muted, marginTop: 14, lineHeight: 22, textAlign: 'right', writingDirection: 'rtl' },
   quickFacts: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12, marginTop: 18 },
   quickFact: { minWidth: 120, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 9, backgroundColor: '#F3F4F0', borderWidth: 1, borderColor: '#EAEDE7' },
@@ -282,9 +284,9 @@ const styles = StyleSheet.create({
   grid: { marginTop: 18, gap: 18 },
   card: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '900', color: colors.ink, textAlign: 'right', writingDirection: 'rtl' },
-  detailRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEF0EC' },
-  detailLabel: { flex: 1, fontSize: 11, color: colors.muted, textAlign: 'right', writingDirection: 'rtl' },
-  detailValue: { flex: 1.3, fontSize: 11, fontWeight: '700', color: colors.ink, textAlign: 'right', writingDirection: 'rtl' },
+  detailRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEF0EC' },
+  detailLabel: { flex: 1, minWidth: 100, fontSize: 11, color: colors.muted, textAlign: 'right', writingDirection: 'rtl' },
+  detailValue: { flex: 1.3, minWidth: 140, fontSize: 11, fontWeight: '700', color: colors.ink, textAlign: 'right', writingDirection: 'rtl' },
   emptyDetail: { color: colors.muted, fontSize: 11, marginTop: 12, textAlign: 'right', writingDirection: 'rtl' },
   timeline: { marginTop: 18 },
   timelineRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12 },
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
   offerList: { marginTop: 18, gap: 12 },
   offerItem: { backgroundColor: '#F9FAF7', borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12 },
   offerHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
-  offerHeaderText: { flex: 1, alignItems: 'flex-end' },
+  offerHeaderText: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
   offerSupplier: { color: colors.ink, fontSize: 12, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   offerMeta: { color: colors.muted, fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   offerTotal: { color: colors.greenDark, fontSize: 14, fontWeight: '900', textAlign: 'left' },

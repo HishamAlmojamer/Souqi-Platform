@@ -1,18 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../AppHeader';
 import { colors } from '../palette';
+import { containerStyle, useResponsive } from '../responsive';
 import { fonts } from '../typography';
 import {
   errorMessage,
@@ -269,8 +262,8 @@ function VerificationSelector({
 
 export function AdminDashboard() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const wide = width >= 980;
+  const { isDesktop, isCompact, gutter } = useResponsive();
+  const wide = isDesktop;
   const { account, refresh } = useAuth();
 
   const [tab, setTab] = useState<AdminTab>('overview');
@@ -567,12 +560,12 @@ export function AdminDashboard() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="admin" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>إدارة المنصة</Text>
-              <Text style={styles.pageTitle}>لوحة التحكم الإدارية</Text>
+              <Text style={[styles.pageTitle, isCompact && styles.pageTitleCompact]}>لوحة التحكم الإدارية</Text>
               <Text style={styles.pageDescription}>
                 مركز تحكم واحد للحسابات والمؤسسات والعضويات والاعتمادات والقطاعات وسجل التدقيق.
               </Text>
@@ -1358,34 +1351,47 @@ export function AdminDashboard() {
               </View>
               <View style={styles.panel}>
                 <Text style={styles.panelTitle}>مصفوفة الصلاحيات</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.table}>
-                    <View style={styles.tableRow}>
-                      <Text style={[styles.tableCell, styles.tableHead]}>الصلاحية</Text>
-                      {roles.map((role) => (
-                        <Text key={role.value} style={[styles.tableCell, styles.tableHead]}>{role.label}</Text>
+                {isDesktop ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={[styles.table, styles.tableWide]}>
+                      <View style={styles.tableRow}>
+                        <Text style={[styles.tableCell, styles.tableHead]}>الصلاحية</Text>
+                        {roles.map((role) => (
+                          <Text key={role.value} style={[styles.tableCell, styles.tableHead]}>{role.label}</Text>
+                        ))}
+                      </View>
+                      {PERMISSION_KEYS.map((key) => (
+                        <View key={key} style={styles.tableRow}>
+                          <Text style={[styles.tableCell, styles.tableLabel]}>{permissionLabel(key)}</Text>
+                          {roles.map((role) => (
+                            <Text
+                              key={role.value}
+                              style={[
+                                styles.tableCell,
+                                ROLE_PERMISSION_KEYS[role.value as AppRole]?.includes(key)
+                                  ? styles.tableAllowed
+                                  : styles.tableDenied,
+                              ]}
+                            >
+                              {ROLE_PERMISSION_KEYS[role.value as AppRole]?.includes(key) ? '✓' : '—'}
+                            </Text>
+                          ))}
+                        </View>
                       ))}
                     </View>
-                    {PERMISSION_KEYS.map((key) => (
-                      <View key={key} style={styles.tableRow}>
-                        <Text style={[styles.tableCell, styles.tableLabel]}>{permissionLabel(key)}</Text>
-                        {roles.map((role) => (
-                          <Text
-                            key={role.value}
-                            style={[
-                              styles.tableCell,
-                              ROLE_PERMISSION_KEYS[role.value as AppRole]?.includes(key)
-                                ? styles.tableAllowed
-                                : styles.tableDenied,
-                            ]}
-                          >
-                            {ROLE_PERMISSION_KEYS[role.value as AppRole]?.includes(key) ? '✓' : '—'}
-                          </Text>
+                  </ScrollView>
+                ) : (
+                  <View style={styles.roleCards}>
+                    {roles.map((role) => (
+                      <View key={role.value} style={styles.roleCard}>
+                        <Text style={styles.roleCardTitle}>{role.label}</Text>
+                        {PERMISSION_KEYS.filter((key) => ROLE_PERMISSION_KEYS[role.value as AppRole]?.includes(key)).map((key) => (
+                          <Text key={key} style={styles.rolePermission}>✓ {permissionLabel(key)}</Text>
                         ))}
                       </View>
                     ))}
                   </View>
-                </ScrollView>
+                )}
               </View>
             </View>
           ) : null}
@@ -1399,12 +1405,13 @@ export function AdminDashboard() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 34, paddingHorizontal: 20 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: 28 },
-  headingRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
-  headingCopy: { flex: 1, alignItems: 'flex-end' },
+  page: { paddingBottom: 34 },
+  content: { ...containerStyle, paddingTop: 28 },
+  headingRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
+  headingCopy: { flex: 1, minWidth: 240, alignItems: 'flex-end' },
   kicker: { color: colors.goldDeep, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   pageTitle: { color: colors.ink, fontFamily: fonts.bold, fontSize: 26, fontWeight: '900', marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
+  pageTitleCompact: { fontSize: 22 },
   pageDescription: { color: colors.muted, fontSize: 12, lineHeight: 20, marginTop: 7, textAlign: 'right', writingDirection: 'rtl' },
   headerActions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
   backButton: { minHeight: 42, paddingHorizontal: 14, borderRadius: 9, borderWidth: 1, borderColor: colors.gold, backgroundColor: colors.paper, justifyContent: 'center' },
@@ -1429,8 +1436,8 @@ const styles = StyleSheet.create({
   quickActions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   quickButton: { minHeight: 38, paddingHorizontal: 13, borderRadius: 8, backgroundColor: colors.greenLight, justifyContent: 'center' },
   quickButtonText: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 10, writingDirection: 'rtl' },
-  panel: { marginTop: 20, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 15, flexGrow: 1, flexBasis: 340 },
-  panelHeading: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
+  panel: { marginTop: 20, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 15, flexGrow: 1, flexBasis: 340, minWidth: 0, maxWidth: '100%' },
+  panelHeading: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   panelTitle: { color: colors.ink, fontFamily: fonts.bold, fontSize: 15, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   panelSubtitle: { color: colors.muted, fontFamily: fonts.medium, fontSize: 10, lineHeight: 17, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   panelCount: { color: colors.goldDeep, fontFamily: fonts.semiBold, fontSize: 11 },
@@ -1438,9 +1445,9 @@ const styles = StyleSheet.create({
   statusChip: { backgroundColor: colors.stone, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 7 },
   statusChipText: { color: colors.inkSoft, fontFamily: fonts.medium, fontSize: 9, writingDirection: 'rtl' },
   emptyText: { color: colors.muted, fontFamily: fonts.medium, fontSize: 10, marginTop: 14, textAlign: 'right', writingDirection: 'rtl' },
-  listItem: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: '#EEE8DD', paddingVertical: 13 },
-  compactRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTopWidth: 1, borderTopColor: '#EEE8DD', paddingTop: 10, marginTop: 8 },
-  listCopy: { flex: 1, alignItems: 'flex-end' },
+  listItem: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: '#EEE8DD', paddingVertical: 13 },
+  compactRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTopWidth: 1, borderTopColor: '#EEE8DD', paddingTop: 10, marginTop: 8 },
+  listCopy: { flex: 1, minWidth: 180, alignItems: 'flex-end' },
   itemTitle: { color: colors.ink, fontFamily: fonts.semiBold, fontSize: 12, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   itemMeta: { color: colors.muted, fontFamily: fonts.medium, fontSize: 9, lineHeight: 15, marginTop: 4, textAlign: 'right', writingDirection: 'rtl' },
   jsonText: { alignSelf: 'stretch', color: colors.inkSoft, backgroundColor: colors.stone, borderRadius: 6, fontFamily: fonts.medium, fontSize: 8, lineHeight: 13, marginTop: 6, padding: 8, textAlign: 'right', writingDirection: 'rtl' },
@@ -1473,7 +1480,12 @@ const styles = StyleSheet.create({
   versionValue: { color: colors.green, fontFamily: fonts.bold, fontSize: 16, marginTop: 3 },
   schemaPanel: { width: '100%', marginTop: 14, backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 12 },
   schemaForm: { gap: 9, marginTop: 12 },
-  table: { minWidth: 720, marginTop: 8 },
+  table: { marginTop: 8 },
+  tableWide: { minWidth: 720 },
+  roleCards: { gap: 10, marginTop: 10 },
+  roleCard: { backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 12 },
+  roleCardTitle: { color: colors.goldDeep, fontFamily: fonts.bold, fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginBottom: 6 },
+  rolePermission: { color: colors.inkSoft, fontFamily: fonts.medium, fontSize: 10, textAlign: 'right', writingDirection: 'rtl', lineHeight: 18 },
   tableRow: { flexDirection: 'row-reverse', borderBottomWidth: 1, borderBottomColor: colors.line, minHeight: 36, alignItems: 'center' },
   tableCell: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.medium, fontSize: 9, textAlign: 'center', writingDirection: 'rtl' },
   tableHead: { color: colors.goldDeep, fontFamily: fonts.semiBold },

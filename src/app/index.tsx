@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useWindowDimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { fonts, typeScale } from '@/components/b2b/typography';
 
 const sectors = [
@@ -16,18 +17,19 @@ const sectors = [
 const journeyStages = ['01', '02', '03', '04'];
 
 export default function LandingScreen() {
-  const { width } = useWindowDimensions();
+  const { width, isPhone, isDesktop, gutter } = useResponsive();
   const router = useRouter();
-  const wide = width >= 800;
-  const tablet = width >= 600;
-  const heroTitleStyle = wide ? typeScale.display : tablet ? typeScale.displayMedium : typeScale.displaySmall;
+  const wide = isDesktop;
+  const tablet = !isPhone;
+  const heroTitleSize = Math.min(Math.max(width * 0.075, 32), 56);
+  const heroTitleStyle = { fontSize: heroTitleSize, lineHeight: heroTitleSize * 1.12 } as const;
   const sectorSizing = wide ? styles.sectorCardQuad : tablet ? styles.sectorCardHalf : styles.sectorCardFull;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="home" />
       <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
-        <View style={[styles.hero, { paddingHorizontal: wide ? 44 : 24 }]}>
+        <View style={[styles.hero, { paddingHorizontal: wide ? 44 : gutter }]}>
           <View style={[styles.heroGlow, styles.decorative]} />
           <View style={[styles.heroOrb, styles.decorative]} />
           <View style={[styles.heroArc, styles.decorative]} />
@@ -123,7 +125,7 @@ export default function LandingScreen() {
         </View>
 
         <View style={styles.valueStrip}>
-          <View style={[styles.valueInner, { flexDirection: tablet ? 'row-reverse' : 'column' }]}>
+          <View style={[styles.valueInner, { flexDirection: tablet ? 'row-reverse' : 'column', paddingHorizontal: gutter }]}>
             <ValueItem value="مواصفات" label="أوضح من البداية" />
             <View style={styles.valueDivider} />
             <ValueItem value="عروض" label="أسهل في المقارنة" />
@@ -133,7 +135,7 @@ export default function LandingScreen() {
           </View>
         </View>
 
-        <View style={[styles.section, { paddingHorizontal: wide ? 40 : 22 }]}>
+        <View style={[styles.section, { paddingHorizontal: wide ? 40 : gutter }]}>
           <View style={[styles.sectionHeader, wide && styles.sectionHeaderWide]}>
             <View style={styles.sectionIntro}>
               <Text style={styles.sectionKicker}>مساحة واحدة، قطاعات متعددة</Text>
@@ -156,7 +158,7 @@ export default function LandingScreen() {
               </View>
             ))}
           </View>
-          <View style={[styles.sectorGrid, { flexDirection: tablet ? 'row-reverse' : 'column' }]}>
+          <View style={[styles.sectorGrid, { flexDirection: tablet ? 'row-reverse' : 'column', flexWrap: 'wrap' }]}>
             {sectors.map((sector) => (
               <Pressable
                 key={sector.index}
@@ -284,8 +286,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(226,238,231,0.09)',
   },
-  heroInner: { width: '100%', maxWidth: 1180, alignSelf: 'center' },
-  heroInnerWide: { flexDirection: 'row-reverse', alignItems: 'center', gap: 42 },
+  heroInner: containerStyle,
+  heroInnerWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 42 },
   heroCopy: { paddingVertical: 6 },
   heroCopyWide: { flex: 1, paddingLeft: 14 },
   eyebrowRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 26 },
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
     shadowRadius: 28,
     elevation: 8,
   },
-  heroVisualWide: { width: 500, height: 396, marginTop: 0, flexShrink: 0 },
+  heroVisualWide: { width: 500, maxWidth: '100%', height: 396, marginTop: 0, flexShrink: 1 },
   visualOrb: {
     position: 'absolute',
     top: -74,
@@ -524,7 +526,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 1180,
     alignSelf: 'center',
-    paddingHorizontal: 24,
     paddingVertical: 22,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
 
   section: { paddingVertical: 68, maxWidth: 1220, width: '100%', alignSelf: 'center' },
   sectionHeader: { marginBottom: 30 },
-  sectionHeaderWide: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end' },
+  sectionHeaderWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end' },
   sectionIntro: { maxWidth: 640 },
   sectionKicker: {
     color: colors.clay,

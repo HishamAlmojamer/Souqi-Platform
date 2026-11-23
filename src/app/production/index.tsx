@@ -1,11 +1,12 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
   errorMessage,
   formatDate,
@@ -40,8 +41,8 @@ function sampleActionsFor(status: string | null): SampleAction[] {
 }
 
 export default function ProductionScreen() {
-  const { width } = useWindowDimensions();
-  const wide = width >= 900;
+  const { isDesktop, gutter } = useResponsive();
+  const wide = isDesktop;
   const { hasPermission } = useAuth();
   const { purchaseOrders, orderDetails, metrics, loading, error, refetch } = usePlatformOverview();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -114,7 +115,7 @@ export default function ProductionScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="production" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
@@ -429,9 +430,9 @@ function dotStyle(tone: Tone) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
   page: { paddingBottom: 32 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: 28, paddingHorizontal: 20 },
-  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  headerCopy: { flex: 1, alignItems: 'flex-end' },
+  content: { ...containerStyle, paddingTop: 28 },
+  headerRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  headerCopy: { flex: 1, minWidth: 240, alignItems: 'flex-end' },
   kicker: { color: colors.goldDeep, fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
   pageTitle: { color: colors.ink, fontSize: 28, fontWeight: '900', marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
   pageSubtitle: { color: colors.muted, fontSize: 12, marginTop: 8, maxWidth: 560, textAlign: 'right', writingDirection: 'rtl' },
@@ -452,9 +453,9 @@ const styles = StyleSheet.create({
   pickerChipId: { color: colors.muted, fontSize: 8, marginTop: 4, textAlign: 'right' },
   pickerChipIdActive: { color: '#DCE7DF' },
   mainGrid: { marginTop: 20, flexDirection: 'column', gap: 18 },
-  mainGridWide: { flexDirection: 'row-reverse', alignItems: 'flex-start' },
-  primaryColumn: { flex: 1.3 },
-  secondaryColumn: { flex: 0.9, gap: 18 },
+  mainGridWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start' },
+  primaryColumn: { flex: 1.3, minWidth: 280 },
+  secondaryColumn: { flex: 0.9, minWidth: 260, gap: 18 },
   panel: { backgroundColor: colors.paper, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 16 },
   panelHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   panelTitle: { color: colors.ink, fontSize: 13, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
@@ -467,14 +468,14 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.inkSoft, fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
   panelIcon: { color: colors.green, fontSize: 18, fontWeight: '800' },
   orderCard: { marginTop: 16, backgroundColor: colors.cream, borderRadius: 10, padding: 14, borderRightWidth: 2, borderRightColor: colors.gold },
-  orderHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  orderHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   orderTitle: { color: colors.ink, fontSize: 16, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   orderMeta: { color: colors.muted, fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   orderPercent: { color: colors.greenDark, fontSize: 18, fontWeight: '900' },
   progressTrack: { height: 8, borderRadius: 6, backgroundColor: '#E7E9E2', marginTop: 14, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 6, backgroundColor: colors.green },
-  orderFacts: { flexDirection: 'row-reverse', justifyContent: 'space-between', gap: 10, marginTop: 16 },
-  factBlock: { flex: 1, alignItems: 'flex-end' },
+  orderFacts: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, marginTop: 16 },
+  factBlock: { flex: 1, minWidth: 90, alignItems: 'flex-end' },
   factLabel: { color: colors.muted, fontSize: 8, writingDirection: 'rtl' },
   factValue: { color: colors.ink, fontSize: 10, fontWeight: '800', marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   timelinePanel: { marginTop: 18 },

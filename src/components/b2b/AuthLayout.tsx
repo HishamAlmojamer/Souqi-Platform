@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandMark } from './BrandMark';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
+import { containerStyle, useResponsive } from './responsive';
 import { fonts, typeScale } from './typography';
 
 type AuthLayoutProps = {
@@ -16,15 +17,15 @@ type AuthLayoutProps = {
 };
 
 export function AuthLayout({ children, title, subtitle, asideTitle, asideText }: AuthLayoutProps) {
-  const { width } = useWindowDimensions();
-  const wide = width >= 820;
+  const { isPhone, isCompact, gutter } = useResponsive();
+  const wide = !isPhone;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: gutter }]}>
         <Link href="/" asChild>
           <Pressable accessibilityRole="link" style={styles.brand}>
-            <BrandMark size={40} />
+            <BrandMark size={isCompact ? 34 : 40} />
             <View>
               <Text style={styles.brandName}>سوقي</Text>
               <Text style={styles.brandSub}>للتصنيع والتوريد</Text>
@@ -34,7 +35,7 @@ export function AuthLayout({ children, title, subtitle, asideTitle, asideText }:
         <Text style={styles.demoBadge}>وصول تجريبي</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: gutter }]} keyboardShouldPersistTaps="handled">
         <View style={[styles.content, wide && styles.contentWide]}>
           <View style={styles.formColumn}>
             <View style={styles.formHeading}>
@@ -72,6 +73,7 @@ export const authStyles = StyleSheet.create({
     marginTop: spacing.xl - 4,
     ...shadows.soft,
   },
+  cardCompact: { padding: spacing.lg, marginTop: spacing.lg },
   field: { marginBottom: spacing.lg },
   label: {
     color: colors.text,
@@ -130,9 +132,10 @@ export const authStyles = StyleSheet.create({
   switchText: { color: colors.textSoft, fontFamily: fonts.medium, fontSize: 11, marginTop: spacing.lg, textAlign: 'center', writingDirection: 'rtl' },
   switchLink: { color: colors.accentDark, fontFamily: fonts.bold, writingDirection: 'rtl' },
   roleLabel: { color: colors.text, fontFamily: fonts.semiBold, fontSize: 12, marginBottom: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
-  roleRow: { flexDirection: 'row-reverse', gap: spacing.md, marginBottom: spacing.lg },
+  roleRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.lg },
   roleButton: {
     flex: 1,
+    minWidth: 140,
     minHeight: 44,
     borderWidth: 1,
     borderColor: colors.border,
@@ -162,11 +165,8 @@ export const authStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.surfaceAlt },
   header: {
+    ...containerStyle,
     minHeight: 76,
-    width: '100%',
-    maxWidth: 1180,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.lg + 4,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     writingDirection: 'rtl',
   },
-  scrollContent: { flexGrow: 1, paddingHorizontal: spacing.lg + 4, paddingVertical: spacing.xl, justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, paddingVertical: spacing.xl, justifyContent: 'center' },
   content: { width: '100%', maxWidth: 1020, alignSelf: 'center' },
   contentWide: { flexDirection: 'row-reverse', alignItems: 'stretch', gap: spacing.xxl - 4 },
   formColumn: { flex: 1, maxWidth: 480, alignSelf: 'center', width: '100%', paddingVertical: spacing.lg },

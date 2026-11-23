@@ -1,11 +1,12 @@
 import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
   errorMessage,
   schemaFields,
@@ -23,8 +24,8 @@ type VersionsPayload = { versions: ApiSchemaVersion[] };
 type CreatePayload = { rfq: ApiRfq };
 
 export default function NewRFQScreen() {
-  const { width } = useWindowDimensions();
-  const wide = width >= 920;
+  const { isDesktop, gutter } = useResponsive();
+  const wide = isDesktop;
   const { activeOrganization, hasPermission } = useAuth();
   const industriesQuery = useApiQuery<IndustriesPayload>('/api/industries?pageSize=100');
   const industries = industriesQuery.data?.industries ?? [];
@@ -149,7 +150,7 @@ export default function NewRFQScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="request" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.content, wide && styles.contentWide]}>
           <View style={styles.topRow}>
             <View>
@@ -356,10 +357,10 @@ export default function NewRFQScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 32, paddingHorizontal: 18 },
-  content: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingTop: 28 },
+  page: { paddingBottom: 32 },
+  content: { ...containerStyle, paddingTop: 28 },
   contentWide: { paddingTop: 32 },
-  topRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
+  topRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
   kicker: { fontSize: 11, fontWeight: '800', color: colors.green, textAlign: 'right', writingDirection: 'rtl' },
   pageTitle: { fontSize: 28, fontWeight: '900', color: colors.ink, marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
   subTitle: { fontSize: 12, color: colors.muted, marginTop: 10, marginBottom: 16, textAlign: 'right', writingDirection: 'rtl' },
@@ -374,8 +375,8 @@ const styles = StyleSheet.create({
   sectorChipActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
   sectorChipText: { fontSize: 11, fontWeight: '700', color: colors.inkSoft, writingDirection: 'rtl' },
   sectorChipTextActive: { color: '#FFF', writingDirection: 'rtl' },
-  basicFields: { flexDirection: 'row-reverse', gap: 12 },
-  fieldGroup: { marginTop: 14 },
+  basicFields: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
+  fieldGroup: { flex: 1, minWidth: 150, marginTop: 14 },
   label: { fontSize: 12, fontWeight: '800', color: colors.ink, marginBottom: 8, textAlign: 'right', writingDirection: 'rtl' },
   required: { color: colors.red },
   input: {

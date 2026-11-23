@@ -1,17 +1,18 @@
 import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
 import { colors } from '@/components/b2b/palette';
+import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { formatDate, formatNumber, PO_STATUS, RFQ_STATUS, statusInfo } from '@/data/api';
 import { usePlatformOverview } from '@/hooks/usePlatformOverview';
 import { useAuth } from '@/state/AuthContext';
 
 export default function BuyerWorkspaceScreen() {
-  const { width } = useWindowDimensions();
-  const wide = width >= 980;
+  const { isDesktop, gutter } = useResponsive();
+  const wide = isDesktop;
   const { account } = useAuth();
   const { rfqs, orderDetails, metrics, activity, loading, error, refetch } = usePlatformOverview();
   const activeOrder = orderDetails.find((order) => order.status !== 'COMPLETED' && order.status !== 'CANCELLED') ?? orderDetails[0];
@@ -20,7 +21,7 @@ export default function BuyerWorkspaceScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="workspace" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
@@ -252,10 +253,10 @@ function Milestone({ title, date, state, last }: { title: string; date: string; 
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
-  page: { paddingBottom: 28, paddingHorizontal: 20 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: 31 },
-  headingRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
-  headingCopy: { flex: 1, alignItems: 'flex-end' },
+  page: { paddingBottom: 28 },
+  content: { ...containerStyle, paddingTop: 31 },
+  headingRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  headingCopy: { flex: 1, minWidth: 220, alignItems: 'flex-end' },
   kicker: { color: colors.goldDeep, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   kickerSlash: { color: '#A8B0A9' },
   pageTitle: { color: colors.ink, fontSize: 26, fontWeight: '900', marginTop: 9, textAlign: 'right', writingDirection: 'rtl' },
@@ -275,18 +276,18 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.ink, fontSize: 25, fontWeight: '900', marginTop: 12, textAlign: 'right' },
   metricDetail: { color: '#849088', fontSize: 9, marginTop: 4, textAlign: 'right', writingDirection: 'rtl' },
   mainGrid: { marginTop: 26 },
-  mainGridWide: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 18 },
-  primaryColumn: { flex: 1 },
-  primaryColumnWide: { flex: 1.43 },
-  secondaryColumn: { marginTop: 25 },
-  secondaryColumnWide: { flex: 0.9, marginTop: 0 },
-  sectionHeading: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  mainGridWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', gap: 18 },
+  primaryColumn: { flex: 1, minWidth: 260 },
+  primaryColumnWide: { flex: 1.43, minWidth: 320 },
+  secondaryColumn: { marginTop: 25, minWidth: 260 },
+  secondaryColumnWide: { flex: 0.9, minWidth: 280, marginTop: 0 },
+  sectionHeading: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   sectionSubTitle: { color: colors.muted, fontSize: 10, marginTop: 4, textAlign: 'right', writingDirection: 'rtl' },
   itemCount: { color: colors.muted, fontSize: 10, writingDirection: 'rtl' },
   requestCard: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 9, paddingHorizontal: 15, paddingVertical: 14, marginBottom: 10 },
   requestTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  requestText: { flex: 1, alignItems: 'flex-end' },
+  requestText: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
   requestTitle: { color: colors.ink, fontSize: 13, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   requestMeta: { color: '#79877F', fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   metaDot: { color: '#B1B8B0' },
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
   pillTextBlue: { color: '#356477' },
   pillTextMuted: { color: colors.muted },
   requestSummary: { color: colors.inkSoft, fontSize: 10, lineHeight: 17, marginTop: 12, textAlign: 'right', writingDirection: 'rtl' },
-  requestBottom: { borderTopWidth: 1, borderTopColor: '#EFF0EB', marginTop: 12, paddingTop: 11, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  requestBottom: { borderTopWidth: 1, borderTopColor: '#EFF0EB', marginTop: 12, paddingTop: 11, flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   requestFacts: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 },
   requestFact: { color: colors.inkSoft, fontSize: 9, writingDirection: 'rtl' },
   factLabel: { color: '#89958E', fontSize: 9, writingDirection: 'rtl' },

@@ -1,8 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useWindowDimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark } from './BrandMark';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
+import { containerStyle, useResponsive } from './responsive';
 import { fonts } from './typography';
 import { useApiQuery } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
@@ -13,74 +15,61 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ active }: AppHeaderProps) {
-  const { width } = useWindowDimensions();
   const router = useRouter();
   const { token, role, account, hasPermission, logout } = useAuth();
-  const wide = width >= 980;
+  const { isDesktop, gutter } = useResponsive();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = hasPermission('platform.admin');
   const overviewQuery = useApiQuery<{ overview: { pendingSupplierVerifications: number } }>(
     token && isAdmin ? '/api/admin/overview' : null,
     60_000,
   );
   const pendingApprovals = overviewQuery.data?.overview.pendingSupplierVerifications ?? 0;
+  const links = [
+    { href: '/', label: 'الرئيسية', visible: true, active: active === 'home', badge: 0 },
+    { href: '/dashboard', label: 'لوحتي', visible: Boolean(token), active: active === 'dashboard', badge: 0 },
+    { href: '/admin', label: 'الإدارة', visible: isAdmin, active: active === 'admin', badge: pendingApprovals },
+    { href: '/rfq/new', label: 'طلب عروض جديد', visible: hasPermission('rfq.create'), active: active === 'request', badge: 0 },
+    { href: '/orders', label: 'الطلبات', visible: hasPermission('rfq.view') || hasPermission('purchaseOrder.view'), active: active === 'orders', badge: 0 },
+    { href: '/production', label: 'التنفيذ', visible: hasPermission('milestone.manage') || hasPermission('purchaseOrder.view'), active: active === 'production', badge: 0 },
+    { href: '/suppliers', label: 'الموردون', visible: Boolean(account?.accountType === 'buyer' || hasPermission('supplierProfile.manage')), active: active === 'suppliers', badge: 0 },
+  ].filter((link) => link.visible);
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <View style={styles.header}>
-      <View style={styles.inner}>
+      <View style={[styles.inner, { paddingHorizontal: gutter }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="العودة إلى الرئيسية"
           onPress={() => router.navigate('/')}
           style={({ pressed }) => [styles.brand, pressed && styles.brandPressed]}
         >
-          <BrandMark size={44} />
+          <BrandMark size={isDesktop ? 44 : 38} />
           <View style={styles.brandCopy}>
             <Text style={styles.brandName}>سوقي</Text>
             <Text style={styles.brandSub}>للتصنيع والتوريد</Text>
           </View>
         </Pressable>
-        {wide ? (
+        {isDesktop ? (
           <View style={styles.nav}>
-            <HeaderLink href={'/' as any} label="الرئيسية" active={active === 'home'} />
-            {token ? <HeaderLink href={'/dashboard' as any} label="لوحتي" active={active === 'dashboard'} /> : null}
-            {hasPermission('platform.admin') ? (
-              <HeaderLink href={'/admin' as any} label="الإدارة" active={active === 'admin'} badge={pendingApprovals} />
-            ) : null}
-            {hasPermission('rfq.create') ? (
-              <HeaderLink href={'/rfq/new' as any} label="طلب عروض جديد" active={active === 'request'} />
-            ) : null}
-            {hasPermission('rfq.view') || hasPermission('purchaseOrder.view') ? (
-              <HeaderLink href={'/orders' as any} label="الطلبات" active={active === 'orders'} />
-            ) : null}
-            {hasPermission('milestone.manage') || hasPermission('purchaseOrder.view') ? (
-              <HeaderLink href={'/production' as any} label="التنفيذ" active={active === 'production'} />
-            ) : null}
-            {account?.accountType === 'buyer' || hasPermission('supplierProfile.manage') ? (
-              <HeaderLink href={'/suppliers' as any} label="الموردون" active={active === 'suppliers'} />
-            ) : null}
+            {links.map((link) => (
+              <HeaderLink key={link.href} href={link.href} label={link.label} active={link.active} badge={link.badge} />
+            ))}
           </View>
         ) : (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={token ? 'لوحة التحكم' : 'تسجيل الدخول'}
-            onPress={() => router.navigate(token ? ('/dashboard' as any) : ('/login' as any))}
-            style={({ pressed }) => [styles.mobileButton, pressed && styles.mobileButtonPressed]}
+            accessibilityLabel={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+            onPress={() => setMenuOpen((open) => !open)}
+            style={({ pressed }) => [styles.mobileMenuButton, pressed && styles.mobileButtonPressed]}
           >
-            <Text style={styles.mobileButtonText}>{token ? 'لوحتي ←' : 'تسجيل الدخول ←'}</Text>
+            <Text style={styles.mobileButtonText}>{menuOpen ? 'إغلاق' : 'القائمة'}</Text>
           </Pressable>
         )}
-        {wide ? token ? (
+        {isDesktop ? token ? (
           <View style={styles.accountCluster}>
             <Text style={styles.accountRole}>{roleLabel(role)}</Text>
-            {hasPermission('platform.admin') ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.navigate('/admin' as any)}
-                style={({ pressed }) => [styles.adminAccountButton, pressed && styles.accountButtonPressed]}
-              >
-                <Text style={styles.adminAccountButtonText}>الإدارة</Text>
-              </Pressable>
-            ) : null}
             <Pressable
               accessibilityRole="button"
               onPress={() => router.navigate('/dashboard' as any)}
@@ -105,19 +94,50 @@ export function AppHeader({ active }: AppHeaderProps) {
             <Text style={styles.accountButtonText}>تسجيل الدخول</Text>
           </Pressable>
         ) : null}
+        {!isDesktop && menuOpen ? (
+          <View style={styles.mobileNav}>
+            {links.map((link) => (
+              <HeaderLink
+                key={link.href}
+                href={link.href}
+                label={link.label}
+                active={link.active}
+                badge={link.badge}
+                onPress={closeMenu}
+              />
+            ))}
+            <View style={styles.mobileAccountRow}>
+              {token ? (
+                <>
+                  <Pressable accessibilityRole="button" onPress={() => { closeMenu(); void logout(); }} style={styles.mobileAccountButton}>
+                    <Text style={styles.mobileAccountText}>تسجيل الخروج</Text>
+                  </Pressable>
+                  <Text style={styles.mobileRole}>{roleLabel(role)}</Text>
+                </>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={() => { closeMenu(); router.navigate('/login' as any); }} style={styles.mobileAccountButton}>
+                  <Text style={styles.mobileAccountText}>تسجيل الدخول</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
 }
 
-function HeaderLink({ href, label, active, badge = 0 }: { href: string; label: string; active: boolean; badge?: number }) {
+function HeaderLink({ href, label, active, badge = 0, onPress }: { href: string; label: string; active: boolean; badge?: number; onPress?: () => void }) {
   const router = useRouter();
 
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityState={{ selected: active }}
-      onPress={() => router.navigate(href as any)}
+      onPress={() => {
+        onPress?.();
+        router.navigate(href as any);
+      }}
       style={({ pressed }) => [
         styles.navLink,
         active && styles.navLinkActive,
@@ -138,15 +158,14 @@ const styles = StyleSheet.create({
     ...shadows.header,
   },
   inner: {
-    width: '100%',
-    maxWidth: 1180,
-    alignSelf: 'center',
+    ...containerStyle,
     minHeight: 78,
-    paddingHorizontal: spacing.lg + 4,
     flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
   brand: {
     flexDirection: 'row-reverse',
@@ -175,7 +194,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   },
-  nav: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs },
+  nav: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs },
   navLink: {
     minHeight: 42,
     justifyContent: 'center',
@@ -258,7 +277,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     writingDirection: 'rtl',
   },
-  mobileButton: {
+  mobileMenuButton: {
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.lg,
     minHeight: 42,
@@ -274,4 +293,38 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     writingDirection: 'rtl',
   },
+  mobileNav: {
+    width: '100%',
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  mobileAccountRow: {
+    width: '100%',
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  mobileAccountButton: {
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.accentDark, 0.35),
+    borderRadius: radii.sm,
+  },
+  mobileAccountText: {
+    color: colors.accentDark,
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    writingDirection: 'rtl',
+  },
+  mobileRole: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 11, writingDirection: 'rtl' },
 });

@@ -206,6 +206,39 @@ async function parseJson(response: Response) {
   }
 }
 
+function staticFallbackForPath(path: string): Record<string, unknown> {
+  const clean = path.split('?')[0];
+  if (clean === '/api/rfqs') return { rfqs: [] };
+  if (clean.startsWith('/api/rfqs/')) {
+    if (clean.endsWith('/quotes')) return { quotes: [] };
+    return { rfq: null };
+  }
+  if (clean === '/api/purchase-orders') return { purchaseOrders: [] };
+  if (clean.startsWith('/api/purchase-orders/')) return { purchaseOrder: null };
+  if (clean === '/api/suppliers') return { suppliers: [] };
+  if (clean === '/api/industries' || clean === '/api/admin/industries') return { industries: [] };
+  if (clean.startsWith('/api/industries/')) return { versions: [] };
+  if (clean === '/api/permissions') return { permissions: [] };
+  if (clean === '/api/admin/overview') {
+    return {
+      overview: {
+        accounts: 0,
+        organizations: 0,
+        rfqsByStatus: {},
+        quotes: 0,
+        purchaseOrders: 0,
+        pendingSupplierVerifications: 0,
+        pendingEvents: 0,
+      },
+    };
+  }
+  if (clean === '/api/admin/accounts') return { accounts: [] };
+  if (clean === '/api/admin/organizations') return { organizations: [] };
+  if (clean.endsWith('/members')) return { members: [] };
+  if (clean === '/api/admin/audit' || clean === '/api/admin/outbox') return { events: [] };
+  return {};
+}
+
 async function fetchMe(token: string, account?: AuthAccount): Promise<MeResult> {
   let response: Response;
   try {
@@ -418,19 +451,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('مطلوب تسجيل الدخول.');
     }
 
-    let response = await send(session.token);
-    if (response.status === 401 && session.refreshToken) {
-      const rotated = await rotateTokens(session.refreshToken);
-      const me = await fetchMe(rotated.token, rotated.account);
-      await persist({ ...me, token: rotated.token, refreshToken: rotated.refreshToken });
-      response = await send(rotated.token);
-    }
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const canFallback = Platform.OS === 'web' && method === 'GET';
+    try {
+      let response = await send(session.token);
+      if (response.status === 401 && session.refreshToken) {
+        const rotated = await rotateTokens(session.refreshToken);
+        const me = await fetchMe(rotated.token, rotated.account);
+        await persist({ ...me, token: rotated.token, refreshToken: rotated.refreshToken });
+        response = await send(rotated.token);
+      }
 
-    const payload = await parseJson(response);
-    if (!response.ok) {
-      throw toAuthError(payload as ErrorPayload);
+      ensureJson(response);
+      const payload = await parseJson(response);
+      if (!response.ok) {
+        throw toAuthError(payload as ErrorPayload);
+      }
+      return payload as T;
+    } catch (error) {
+      if (canFallback) {
+        return staticFallbackForPath(path) as T;
+      }
+      throw error;
     }
-    return payload as T;
   }, [persist, session]);
 
   const value = useMemo<AuthContextValue>(() => ({

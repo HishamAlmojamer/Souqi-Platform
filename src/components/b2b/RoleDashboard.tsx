@@ -1,18 +1,12 @@
 import { Link } from 'expo-router';
 import { useMemo } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from './ApiFeedback';
 import { AppHeader } from './AppHeader';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
+import { containerStyle, useResponsive } from './responsive';
 import { StatusPill } from './StatusPill';
 import { fonts } from './typography';
 import { formatNumber, RFQ_STATUS, statusInfo } from '@/data/api';
@@ -34,8 +28,8 @@ type QuickAction = {
 };
 
 export function RoleDashboard() {
-  const { width } = useWindowDimensions();
-  const wide = width >= 980;
+  const { isDesktop, isCompact, gutter } = useResponsive();
+  const wide = isDesktop;
   const {
     account,
     role,
@@ -76,12 +70,12 @@ export function RoleDashboard() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="dashboard" />
-      <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>{copy.kicker}</Text>
-              <Text style={styles.pageTitle}>{copy.title}</Text>
+              <Text style={[styles.pageTitle, isCompact && styles.pageTitleCompact]}>{copy.title}</Text>
               <Text style={styles.pageDescription}>{copy.description}</Text>
               <View style={styles.identityRow}>
                 <View style={styles.roleBadge}>
@@ -247,12 +241,13 @@ function MetricCard({ label, value, detail, accent }: { label: string; value: st
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.surfaceAlt },
-  page: { paddingBottom: 30, paddingHorizontal: spacing.lg + 4 },
-  content: { maxWidth: 1180, width: '100%', alignSelf: 'center', paddingTop: spacing.xl + 4 },
-  headingRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.lg },
-  headingCopy: { flex: 1, alignItems: 'flex-end' },
+  page: { paddingBottom: 30 },
+  content: { ...containerStyle, paddingTop: spacing.xl + 4 },
+  headingRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.lg },
+  headingCopy: { flex: 1, minWidth: 240, alignItems: 'flex-end' },
   kicker: { color: colors.accentDark, fontFamily: fonts.semiBold, fontSize: 12, textAlign: 'right', writingDirection: 'rtl' },
   pageTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 28, lineHeight: 38, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
+  pageTitleCompact: { fontSize: 23, lineHeight: 32 },
   pageDescription: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 13, lineHeight: 22, marginTop: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
   identityRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, marginTop: spacing.md },
   roleBadge: { backgroundColor: colors.primarySoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm - 1, borderRadius: radii.sm },
@@ -314,12 +309,12 @@ const styles = StyleSheet.create({
   metricDetail: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 10, marginTop: spacing.xs, textAlign: 'right', writingDirection: 'rtl' },
   sectionBlock: { marginTop: spacing.xl },
   sectionBlockCompact: { marginTop: spacing.xl - 4 },
-  sectionHeading: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginBottom: spacing.md },
+  sectionHeading: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginBottom: spacing.md },
   sectionTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 17, textAlign: 'right', writingDirection: 'rtl' },
   sectionSubTitle: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 11, marginTop: spacing.xs, textAlign: 'right', writingDirection: 'rtl' },
   itemCount: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 11, writingDirection: 'rtl' },
   actionGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.md },
-  actionGridWide: { flexDirection: 'row' },
+  actionGridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   actionCard: {
     flexGrow: 1,
     flexBasis: 170,
@@ -337,8 +332,8 @@ const styles = StyleSheet.create({
   actionLabel: { color: colors.text, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
   actionDetail: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 10, marginTop: spacing.sm - 2, textAlign: 'right', writingDirection: 'rtl' },
   lowerGrid: { marginTop: spacing.xl },
-  lowerGridWide: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.lg },
-  lowerColumn: { flex: 1 },
+  lowerGridWide: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', gap: spacing.lg },
+  lowerColumn: { flex: 1, minWidth: 280 },
   requestCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -349,7 +344,7 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   requestTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  requestTitle: { flex: 1, color: colors.text, fontFamily: fonts.semiBold, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' },
+  requestTitle: { flex: 1, minWidth: 0, color: colors.text, fontFamily: fonts.semiBold, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' },
   requestSummary: { color: colors.textSoft, fontFamily: fonts.medium, fontSize: 11, lineHeight: 19, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
   requestMeta: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 10, marginTop: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
   permissionList: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm },
