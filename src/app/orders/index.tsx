@@ -66,11 +66,18 @@ export default function OrdersScreen() {
               <Text style={styles.pageTitle}>كل طلباتك في مكان واحد</Text>
               <Text style={styles.pageDescription}>راجع عروض الموردين، تابع حالة كل طلب، وانتقل مباشرة إلى تفاصيله.</Text>
             </View>
-            <Link href={'/rfq/new' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.newButton}>
-                <Text style={styles.newButtonText}>＋ طلب جديد</Text>
-              </Pressable>
-            </Link>
+            <View style={styles.headerActions}>
+              <Link href={'/production' as any} asChild>
+                <Pressable accessibilityRole="link" style={styles.secondaryHeaderButton}>
+                  <Text style={styles.secondaryHeaderButtonText}>أوامر الشراء</Text>
+                </Pressable>
+              </Link>
+              <Link href={'/rfq/new' as any} asChild>
+                <Pressable accessibilityRole="button" style={styles.newButton}>
+                  <Text style={styles.newButtonText}>＋ طلب جديد</Text>
+                </Pressable>
+              </Link>
+            </View>
           </View>
 
           <View style={styles.notice}>
@@ -198,6 +205,9 @@ const styles = StyleSheet.create({
   kicker: { color: colors.accentDark, fontFamily: fonts.semiBold, fontSize: 12, writingDirection: 'rtl' },
   pageTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 28, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
   pageDescription: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 13, marginTop: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
+  headerActions: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  secondaryHeaderButton: { minHeight: 44, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, paddingHorizontal: spacing.md, justifyContent: 'center' },
+  secondaryHeaderButtonText: { color: colors.inkSoft, fontFamily: fonts.semiBold, fontSize: 11, writingDirection: 'rtl' },
   newButton: { minHeight: 44, borderRadius: radii.sm, backgroundColor: colors.primaryDark, paddingHorizontal: spacing.lg, justifyContent: 'center' },
   newButtonText: { color: colors.accent, fontFamily: fonts.semiBold, fontSize: 12, writingDirection: 'rtl' },
   notice: { marginTop: 19, minHeight: 40, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#EFF1E9', borderWidth: 1, borderColor: '#E1E5DC', borderRadius: 8, flexDirection: 'row-reverse', alignItems: 'center', gap: 9 },

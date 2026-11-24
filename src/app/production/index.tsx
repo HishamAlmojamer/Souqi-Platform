@@ -173,7 +173,17 @@ export default function ProductionScreen() {
                       <Text style={styles.panelTitle}>أمر الإنتاج المحدد</Text>
                       <Text style={styles.panelSubtitle}>PO · {activeOrder.id.slice(0, 8)}</Text>
                     </View>
-                    <ToneBadge label={orderStatus.label} tone={orderStatus.tone} />
+                    <View style={styles.panelHeaderActions}>
+                      <Link
+                        href={{ pathname: '/orders/[id]' as any, params: { id: activeOrder.id } } as any}
+                        asChild
+                      >
+                        <Pressable accessibilityRole="link" style={styles.detailLink}>
+                          <Text style={styles.detailLinkText}>تفاصيل الأمر ←</Text>
+                        </Pressable>
+                      </Link>
+                      <ToneBadge label={orderStatus.label} tone={orderStatus.tone} />
+                    </View>
                   </View>
 
                   <View style={styles.orderCard}>
@@ -457,7 +467,10 @@ const styles = StyleSheet.create({
   primaryColumn: { flex: 1.3, minWidth: 280 },
   secondaryColumn: { flex: 0.9, minWidth: 260, gap: 18 },
   panel: { backgroundColor: colors.paper, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 16 },
-  panelHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  panelHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  panelHeaderActions: { flexDirection: 'row-reverse', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  detailLink: { minHeight: 32, paddingHorizontal: 10, borderRadius: 7, backgroundColor: colors.greenLight, alignItems: 'center', justifyContent: 'center' },
+  detailLinkText: { color: colors.greenDark, fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
   panelTitle: { color: colors.ink, fontSize: 13, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   panelSubtitle: { color: colors.muted, fontSize: 9, marginTop: 4, textAlign: 'right', writingDirection: 'rtl' },
   badge: { minHeight: 24, paddingHorizontal: 9, borderRadius: 6, justifyContent: 'center' },

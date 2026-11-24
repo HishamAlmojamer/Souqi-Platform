@@ -71,12 +71,13 @@ export type ApiRfq = {
   buyerOrganization?: Pick<ApiOrganization, 'id' | 'displayName' | 'legalName'> | null;
   schemaVersion?: ApiSchemaVersion | null;
   quotes?: ApiQuoteSummary[];
-  invitations?: unknown[];
+  invitations?: ApiRfqInvitation[];
   _count?: { invitations?: number; quotes?: number };
 };
 
 export type ApiQuoteSummary = {
   id: string;
+  rfqId: string;
   supplierOrgId: string;
   revision: number;
   status: string;
@@ -93,6 +94,39 @@ export type ApiQuoteLine = {
   quantity: number;
   unitPriceCents: string;
   totalPriceCents: string;
+};
+
+export type ApiRfqInvitation = {
+  id: string;
+  rfqId: string;
+  supplierOrgId: string;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+  sentAt: string;
+  respondedAt: string | null;
+  supplierOrg?: Pick<ApiOrganization, 'id' | 'displayName' | 'legalName' | 'countryCode'> | null;
+  rfq?: Pick<ApiRfq, 'id' | 'title' | 'status' | 'quantity' | 'unit' | 'currency' | 'destination' | 'publishedAt'> | null;
+};
+
+export type ApiEvidence = {
+  id: string;
+  purchaseOrderId: string | null;
+  milestoneId: string | null;
+  objectKey: string;
+  classification: string;
+  scanStatus: string;
+  createdAt: string;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+};
+
+export type ApiNotification = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+  href: string | null;
+  kind: 'rfq' | 'quote' | 'invitation' | 'order' | 'sample' | 'system';
 };
 
 export type ApiQuote = ApiQuoteSummary & {
@@ -120,7 +154,7 @@ export type ApiPurchaseOrder = {
   quote?: { id: string; revision: number; leadTimeDays: number } | null;
   samples?: ApiSample[];
   milestones?: ApiMilestone[];
-  evidenceFiles?: unknown[];
+  evidenceFiles?: ApiEvidence[];
 };
 
 export type ApiSample = {

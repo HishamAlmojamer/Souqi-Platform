@@ -16,6 +16,7 @@ import {
   type AppRole,
   type PermissionKey,
 } from './permissions';
+import { handleLocalWorkspaceRequest, workspaceOrganizationFor } from './localWorkspace';
 
 const SESSION_KEY = 'souqi.auth.session.v2';
 
@@ -219,6 +220,8 @@ function staticFallbackForPath(path: string): Record<string, unknown> {
   if (clean === '/api/industries' || clean === '/api/admin/industries') return { industries: [] };
   if (clean.startsWith('/api/industries/')) return { versions: [] };
   if (clean === '/api/permissions') return { permissions: [] };
+  if (clean === '/api/notifications') return { notifications: [], unreadCount: 0 };
+  if (clean === '/api/supplier-invitations') return { invitations: [] };
   if (clean === '/api/admin/overview') {
     return {
       overview: {
@@ -452,7 +455,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const method = (init?.method ?? 'GET').toUpperCase();
-    const canFallback = Platform.OS === 'web' && method === 'GET';
+    const canFallback = Platform.OS === 'web';
     try {
       let response = await send(session.token);
       if (response.status === 401 && session.refreshToken) {
@@ -470,7 +473,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return payload as T;
     } catch (error) {
       if (canFallback) {
-        return staticFallbackForPath(path) as T;
+        try {
+          const local = await handleLocalWorkspaceRequest(session.account, path, init);
+          if (local) return local as T;
+        } catch {
+          void 0;
+        }
+        if (method === 'GET') {
+          return staticFallbackForPath(path) as T;
+        }
       }
       throw error;
     }
@@ -483,7 +494,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isPlatformAdmin: Boolean(session?.account.isPlatformAdmin || session?.role === 'PLATFORM_ADMIN'),
     memberships: session?.memberships ?? [],
     permissions: session?.permissions ?? [],
-    activeOrganization: session?.memberships[0]?.organization ?? null,
+    activeOrganization: session?.memberships[0]?.organization
+      ?? (session?.account ? workspaceOrganizationFor(session.account) : null),
     ready,
     hasPermission,
     hasAnyPermission,

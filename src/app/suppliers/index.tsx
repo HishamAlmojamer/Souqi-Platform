@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -20,16 +21,60 @@ const countryLabels: Record<string, string> = {
 };
 
 type SuppliersPayload = { suppliers: ApiSupplier[] };
+type CountryFilter = 'all' | string;
+type SortOption = 'name' | 'score' | 'leadTime';
+
+const sortLabels: Record<SortOption, string> = {
+  name: 'الاسم',
+  score: 'التقييم',
+  leadTime: 'مهلة التسليم',
+};
 
 export default function SuppliersDashboardScreen() {
   const { isDesktop, gutter } = useResponsive();
   const wide = isDesktop;
   const suppliersQuery = useApiQuery<SuppliersPayload>('/api/suppliers?pageSize=100');
-  const suppliers = suppliersQuery.data?.suppliers ?? [];
+  const suppliers = useMemo(() => suppliersQuery.data?.suppliers ?? [], [suppliersQuery.data?.suppliers]);
   const capabilities = suppliers.map((supplier) => supplierCapabilities(supplier.supplierProfile));
   const scores = capabilities.flatMap((item) => item.score === null ? [] : [item.score]);
   const avgScore = scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
   const withLeadTime = suppliers.filter((supplier) => supplier.supplierProfile?.leadTimeDays != null).length;
+
+  const [search, setSearch] = useState('');
+  const [country, setCountry] = useState<CountryFilter>('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>('name');
+
+  const countries = useMemo(() => Array.from(new Set(suppliers.map((supplier) => supplier.countryCode))).sort(), [suppliers]);
+  const decorated = useMemo(() => suppliers.map((supplier) => ({
+    supplier,
+    capability: supplierCapabilities(supplier.supplierProfile),
+  })), [suppliers]);
+  const visibleSuppliers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const result = decorated.filter(({ supplier, capability }) => {
+      const matchesQuery = !query || [
+        supplier.displayName,
+        supplier.legalName,
+        supplier.countryCode,
+        countryLabels[supplier.countryCode] ?? '',
+        capability.category,
+        ...capability.specialties,
+      ].join(' ').toLocaleLowerCase().includes(query);
+      const matchesCountry = country === 'all' || supplier.countryCode === country;
+      const matchesVerification = !verifiedOnly || supplier.supplierProfile?.verificationStatus === 'APPROVED';
+      return matchesQuery && matchesCountry && matchesVerification;
+    });
+    return result.sort((left, right) => {
+      if (sort === 'score') return (right.capability.score ?? -1) - (left.capability.score ?? -1);
+      if (sort === 'leadTime') {
+        const leftLead = left.supplier.supplierProfile?.leadTimeDays ?? Number.MAX_SAFE_INTEGER;
+        const rightLead = right.supplier.supplierProfile?.leadTimeDays ?? Number.MAX_SAFE_INTEGER;
+        return leftLead - rightLead;
+      }
+      return left.supplier.displayName.localeCompare(right.supplier.displayName, 'ar');
+    });
+  }, [country, decorated, search, sort, verifiedOnly]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -65,12 +110,74 @@ export default function SuppliersDashboardScreen() {
             onRetry={() => { void suppliersQuery.refetch(); }}
           />
 
+          <View style={styles.filterPanel}>
+            <View style={styles.searchBox}>
+              <Text style={styles.searchGlyph}>⌕</Text>
+              <TextInput
+                accessibilityLabel="البحث في الموردين"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="ابحث بالاسم أو الدولة أو التخصص"
+                placeholderTextColor="#8A948D"
+                style={styles.searchInput}
+                textAlign="right"
+                returnKeyType="search"
+              />
+            </View>
+            <View style={styles.filterRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: verifiedOnly }}
+                onPress={() => setVerifiedOnly((current) => !current)}
+                style={[styles.toggle, verifiedOnly && styles.toggleActive]}
+              >
+                <Text style={[styles.toggleText, verifiedOnly && styles.toggleTextActive]}>الموثقون فقط</Text>
+              </Pressable>
+              {(Object.keys(sortLabels) as SortOption[]).map((option) => (
+                <Pressable
+                  key={option}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: sort === option }}
+                  onPress={() => setSort(option)}
+                  style={[styles.filterChip, sort === option && styles.filterChipActive]}
+                >
+                  <Text style={[styles.filterChipText, sort === option && styles.filterChipTextActive]}>
+                    {sortLabels[option]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.countryRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: country === 'all' }}
+                onPress={() => setCountry('all')}
+                style={[styles.countryChip, country === 'all' && styles.countryChipActive]}
+              >
+                <Text style={[styles.countryChipText, country === 'all' && styles.countryChipTextActive]}>كل الدول</Text>
+              </Pressable>
+              {countries.map((code) => (
+                <Pressable
+                  key={code}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: country === code }}
+                  onPress={() => setCountry(code)}
+                  style={[styles.countryChip, country === code && styles.countryChipActive]}
+                >
+                  <Text style={[styles.countryChipText, country === code && styles.countryChipTextActive]}>
+                    {countryLabels[code] ?? code}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Text style={styles.resultCount}>{formatNumber(visibleSuppliers.length)} مورد مطابق</Text>
+          </View>
+
           <View style={[styles.grid, wide && styles.gridWide]}>
             <View style={styles.mainColumn}>
               <Text style={styles.sectionTitle}>الموردون المتاحون</Text>
               <View style={styles.list}>
-                {suppliers.map((supplier) => {
-                  const capability = supplierCapabilities(supplier.supplierProfile);
+                {visibleSuppliers.map(({ supplier, capability }) => {
                   return (
                     <View key={supplier.id} style={styles.card}>
                       <View style={styles.cardHeader}>
@@ -122,8 +229,7 @@ export default function SuppliersDashboardScreen() {
               <View style={styles.panel}>
                 <Text style={styles.panelTitle}>مقارنة سريعة</Text>
                 <View style={styles.compareTable}>
-                  {suppliers.map((supplier) => {
-                    const capability = supplierCapabilities(supplier.supplierProfile);
+                  {visibleSuppliers.map(({ supplier, capability }) => {
                     return (
                       <View key={supplier.id} style={styles.compareRow}>
                         <Text style={styles.compareName} numberOfLines={1}>{supplier.displayName}</Text>
@@ -132,7 +238,7 @@ export default function SuppliersDashboardScreen() {
                       </View>
                     );
                   })}
-                  {suppliers.length === 0 ? <Text style={styles.panelEmpty}>لا توجد بيانات للمقارنة.</Text> : null}
+                  {visibleSuppliers.length === 0 ? <Text style={styles.panelEmpty}>لا توجد بيانات للمقارنة.</Text> : null}
                 </View>
               </View>
 
@@ -242,4 +348,23 @@ const styles = StyleSheet.create({
   actionRow: { backgroundColor: '#F7F8F5', borderRadius: 9, padding: 10 },
   actionLabel: { color: colors.ink, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   actionDescription: { color: colors.muted, fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
+  filterPanel: { marginTop: 18, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 14 },
+  searchBox: { minHeight: 44, borderWidth: 1, borderColor: colors.line, backgroundColor: '#FBFBF9', borderRadius: 8, flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 12 },
+  searchGlyph: { color: colors.green, fontSize: 20, marginLeft: 8 },
+  searchInput: { flex: 1, paddingVertical: 8, color: colors.ink, fontSize: 11, writingDirection: 'rtl' },
+  filterRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  toggle: { minHeight: 34, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  toggleActive: { backgroundColor: colors.greenLight, borderColor: colors.green },
+  toggleText: { color: colors.inkSoft, fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
+  toggleTextActive: { color: colors.greenDark },
+  filterChip: { minHeight: 34, paddingHorizontal: 12, borderRadius: 7, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  filterChipActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
+  filterChipText: { color: colors.inkSoft, fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
+  filterChipTextActive: { color: '#FFFFFF' },
+  countryRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginTop: 12, paddingVertical: 2 },
+  countryChip: { minHeight: 32, paddingHorizontal: 11, borderRadius: 7, backgroundColor: '#F4F5F1', alignItems: 'center', justifyContent: 'center' },
+  countryChipActive: { backgroundColor: colors.goldLight },
+  countryChipText: { color: colors.inkSoft, fontSize: 9, fontWeight: '700', writingDirection: 'rtl' },
+  countryChipTextActive: { color: colors.goldDeep, fontWeight: '900' },
+  resultCount: { color: colors.muted, fontSize: 9, textAlign: 'right', writingDirection: 'rtl', marginTop: 11 },
 });

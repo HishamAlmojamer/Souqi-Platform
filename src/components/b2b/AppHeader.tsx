@@ -11,7 +11,7 @@ import { useAuth } from '@/state/AuthContext';
 import { roleLabel } from '@/state/permissions';
 
 type AppHeaderProps = {
-  active?: 'home' | 'dashboard' | 'admin' | 'workspace' | 'request' | 'suppliers' | 'production' | 'orders';
+  active?: 'home' | 'dashboard' | 'admin' | 'workspace' | 'request' | 'suppliers' | 'production' | 'orders' | 'supplier' | 'notifications';
 };
 
 export function AppHeader({ active }: AppHeaderProps) {
@@ -25,6 +25,11 @@ export function AppHeader({ active }: AppHeaderProps) {
     60_000,
   );
   const pendingApprovals = overviewQuery.data?.overview.pendingSupplierVerifications ?? 0;
+  const notificationsQuery = useApiQuery<{ unreadCount: number }>(
+    token ? '/api/notifications?pageSize=100' : null,
+    30_000,
+  );
+  const unreadCount = notificationsQuery.data?.unreadCount ?? 0;
   const links = [
     { href: '/', label: 'الرئيسية', visible: true, active: active === 'home', badge: 0 },
     { href: '/dashboard', label: 'لوحتي', visible: Boolean(token), active: active === 'dashboard', badge: 0 },
@@ -33,6 +38,8 @@ export function AppHeader({ active }: AppHeaderProps) {
     { href: '/orders', label: 'الطلبات', visible: hasPermission('rfq.view') || hasPermission('purchaseOrder.view'), active: active === 'orders', badge: 0 },
     { href: '/production', label: 'التنفيذ', visible: hasPermission('milestone.manage') || hasPermission('purchaseOrder.view'), active: active === 'production', badge: 0 },
     { href: '/suppliers', label: 'الموردون', visible: Boolean(account?.accountType === 'buyer' || hasPermission('supplierProfile.manage')), active: active === 'suppliers', badge: 0 },
+    { href: '/supplier', label: 'بوابة المورد', visible: Boolean(account?.accountType === 'supplier' || hasPermission('quote.create')), active: active === 'supplier', badge: 0 },
+    { href: '/notifications', label: 'الإشعارات', visible: Boolean(token), active: active === 'notifications', badge: unreadCount },
   ].filter((link) => link.visible);
   const closeMenu = () => setMenuOpen(false);
 

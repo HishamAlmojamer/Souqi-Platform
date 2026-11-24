@@ -19,7 +19,9 @@ import {
   useApiQuery,
   type ApiQuote,
   type ApiRfq,
+  type ApiRfqInvitation,
   type ApiSchemaVersion,
+  type ApiSupplier,
 } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
 
@@ -27,19 +29,35 @@ type RfqPayload = { rfq: ApiRfq };
 type QuotesPayload = { quotes: ApiQuote[] };
 type SchemaPayload = { version: ApiSchemaVersion };
 type AwardPayload = { purchaseOrder: { id: string } };
+type SuppliersPayload = { suppliers: ApiSupplier[] };
+type InvitationsPayload = { invitations: ApiRfqInvitation[] };
+
+const invitationLabels: Record<string, string> = {
+  PENDING: 'بانتظار الرد',
+  ACCEPTED: 'تم تقديم العرض',
+  DECLINED: 'معتذرة',
+  EXPIRED: 'منتهية',
+};
 
 export default function RFQDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { hasPermission } = useAuth();
   const [actionError, setActionError] = useState('');
   const [awardedPoId, setAwardedPoId] = useState('');
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [inviteMessage, setInviteMessage] = useState('');
   const { gutter } = useResponsive();
   const rfqQuery = useApiQuery<RfqPayload>(id ? `/api/rfqs/${id}` : null);
   const quotesQuery = useApiQuery<QuotesPayload>(id ? `/api/rfqs/${id}/quotes?pageSize=100` : null);
+  const suppliersQuery = useApiQuery<SuppliersPayload>(hasPermission('rfq.invite') ? '/api/suppliers?pageSize=100' : null);
+  const invitationsQuery = useApiQuery<InvitationsPayload>(id && hasPermission('rfq.view') ? `/api/rfqs/${id}/invitations` : null);
   const rfq = rfqQuery.data?.rfq;
   const schemaQuery = useApiQuery<SchemaPayload>(rfq?.schemaVersionId ? `/api/schema-versions/${rfq.schemaVersionId}` : null);
   const changeStatus = useApiMutation();
   const award = useApiMutation<AwardPayload>();
+  const invite = useApiMutation<{ invited: number }>();
+  const suppliers = suppliersQuery.data?.suppliers ?? [];
+  const invitations = invitationsQuery.data?.invitations ?? rfq?.invitations ?? [];
   const fields = schemaFields(schemaQuery.data?.version?.schemaJson);
   const status = statusInfo(RFQ_STATUS, rfq?.status ?? 'DRAFT');
 
@@ -63,6 +81,32 @@ export default function RFQDetailScreen() {
     } catch (cause) {
       setActionError(errorMessage(cause));
     }
+  };
+
+  const sendInvitations = async () => {
+    setActionError('');
+    setInviteMessage('');
+    if (selectedSuppliers.length === 0) {
+      setActionError('اختر موردًا واحدًا على الأقل قبل الإرسال.');
+      return;
+    }
+    try {
+      const result = await invite.mutateAsync({
+        path: `/api/rfqs/${id}/invitations`,
+        method: 'POST',
+        body: { supplierOrgIds: selectedSuppliers },
+      });
+      setInviteMessage(`تم إرسال ${formatNumber(result.invited)} دعوة.`);
+      setSelectedSuppliers([]);
+    } catch (cause) {
+      setActionError(errorMessage(cause));
+    }
+  };
+
+  const toggleSupplier = (supplierOrgId: string) => {
+    setSelectedSuppliers((current) => current.includes(supplierOrgId)
+      ? current.filter((item) => item !== supplierOrgId)
+      : [...current, supplierOrgId]);
   };
 
   const loading = rfqQuery.isLoading || quotesQuery.isLoading;
@@ -102,6 +146,16 @@ export default function RFQDetailScreen() {
                   <StatusPill label={status.label} tone={status.tone} />
                 </View>
                 <Text style={styles.summary}>{rfq.destination}</Text>
+                {rfq.status === 'DRAFT' && hasPermission('rfq.manage') ? (
+                  <Link
+                    href={{ pathname: '/rfq/[id]/edit' as any, params: { id: rfq.id } } as any}
+                    asChild
+                  >
+                    <Pressable accessibilityRole="button" style={styles.editButton}>
+                      <Text style={styles.editButtonText}>تعديل المسودة</Text>
+                    </Pressable>
+                  </Link>
+                ) : null}
                 <View style={styles.quickFacts}>
                   <QuickFact label="القطاع" value={rfq.industry?.nameAr ?? '—'} />
                   <QuickFact label="الكمية" value={`${formatNumber(rfq.quantity)} ${rfq.unit}`} />
@@ -190,6 +244,67 @@ export default function RFQDetailScreen() {
                       <Text style={styles.emptyDetail}>لا توجد عروض مقدمة على هذا الطلب حتى الآن.</Text>
                     )}
                   </View>
+                </View>
+
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>دعوة الموردين</Text>
+                  {rfq.status === 'PUBLISHED' && hasPermission('rfq.invite') ? (
+                    <>
+                      <Text style={styles.cardHint}>اختر الموردين المعتمدين الذين سيتلقون هذا الطلب.</Text>
+                      <View style={styles.supplierOptions}>
+                        {suppliers.map((supplier) => {
+                          const invited = invitations.some((item) => item.supplierOrgId === supplier.id);
+                          const selected = selectedSuppliers.includes(supplier.id);
+                          return (
+                            <Pressable
+                              key={supplier.id}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected }}
+                              disabled={invited}
+                              onPress={() => { toggleSupplier(supplier.id); setActionError(''); setInviteMessage(''); }}
+                              style={[styles.supplierOption, selected && styles.supplierOptionSelected, invited && styles.supplierOptionInvited]}
+                            >
+                              <Text style={[styles.supplierOptionName, selected && styles.supplierOptionNameSelected]} numberOfLines={1}>
+                                {supplier.displayName}
+                              </Text>
+                              <Text style={styles.supplierOptionMeta}>
+                                {invited ? 'مدعو بالفعل' : selected ? 'محدد للإرسال' : supplier.countryCode}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                        {suppliers.length === 0 ? <Text style={styles.emptyDetail}>لا يوجد موردون متاحون للدعوة.</Text> : null}
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={invite.isPending || selectedSuppliers.length === 0}
+                        onPress={() => { void sendInvitations(); }}
+                        style={[styles.inviteButton, invite.isPending && styles.inviteButtonDisabled]}
+                      >
+                        <Text style={styles.inviteButtonText}>إرسال الدعوات المحددة</Text>
+                      </Pressable>
+                      {inviteMessage ? <Text style={styles.inviteSuccess}>{inviteMessage}</Text> : null}
+                    </>
+                  ) : (
+                    <Text style={styles.cardHint}>تظهر أدوات الدعوة بعد نشر الطلب وللمستخدمين الذين يملكون صلاحية الدعوة.</Text>
+                  )}
+
+                  <Text style={styles.invitationsTitle}>الدعوات المسجلة</Text>
+                  {invitations.length > 0 ? invitations.map((invitation) => (
+                    <View key={invitation.id} style={styles.invitationRow}>
+                      <View style={styles.invitationCopy}>
+                        <Text style={styles.invitationName}>
+                          {invitation.supplierOrg?.displayName ?? invitation.supplierOrgId}
+                        </Text>
+                        <Text style={styles.invitationDate}>أُرسلت في {formatDate(invitation.sentAt)}</Text>
+                      </View>
+                      <View style={styles.invitationStatus}>
+                        <Text style={styles.invitationStatusText}>
+                          {invitationLabels[invitation.status] ?? invitation.status}
+                        </Text>
+                      </View>
+                    </View>
+                  )) : <Text style={styles.emptyDetail}>لم تُرسل أي دعوات على هذا الطلب بعد.</Text>}
                 </View>
 
                 <View style={styles.card}>
@@ -312,4 +427,25 @@ const styles = StyleSheet.create({
   awardButtonText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800', writingDirection: 'rtl' },
   pill: { minHeight: 28, paddingHorizontal: 10, borderRadius: 8, justifyContent: 'center' },
   pillText: { fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
+  editButton: { alignSelf: 'flex-end', marginTop: 12, minHeight: 36, paddingHorizontal: 12, borderRadius: 7, backgroundColor: colors.goldLight, alignItems: 'center', justifyContent: 'center' },
+  editButtonText: { color: colors.goldDeep, fontSize: 10, fontWeight: '800', writingDirection: 'rtl' },
+  cardHint: { color: colors.muted, fontSize: 10, textAlign: 'right', writingDirection: 'rtl', marginTop: 10, lineHeight: 18 },
+  supplierOptions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  supplierOption: { minWidth: 130, flexGrow: 1, backgroundColor: '#F8F9F6', borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 10 },
+  supplierOptionSelected: { backgroundColor: colors.greenLight, borderColor: colors.green },
+  supplierOptionInvited: { opacity: 0.6 },
+  supplierOptionName: { color: colors.ink, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
+  supplierOptionNameSelected: { color: colors.greenDark },
+  supplierOptionMeta: { color: colors.muted, fontSize: 8, textAlign: 'right', writingDirection: 'rtl', marginTop: 5 },
+  inviteButton: { marginTop: 14, minHeight: 40, borderRadius: 8, backgroundColor: colors.greenDark, alignItems: 'center', justifyContent: 'center' },
+  inviteButtonDisabled: { opacity: 0.5 },
+  inviteButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
+  inviteSuccess: { color: colors.greenDark, fontSize: 10, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl', marginTop: 10 },
+  invitationsTitle: { color: colors.ink, fontSize: 12, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl', marginTop: 20, marginBottom: 10 },
+  invitationRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#EEF0EC' },
+  invitationCopy: { flex: 1, minWidth: 120, alignItems: 'flex-end' },
+  invitationName: { color: colors.ink, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
+  invitationDate: { color: colors.muted, fontSize: 8, textAlign: 'right', writingDirection: 'rtl', marginTop: 5 },
+  invitationStatus: { backgroundColor: colors.greenLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 5 },
+  invitationStatusText: { color: colors.greenDark, fontSize: 8, fontWeight: '800', writingDirection: 'rtl' },
 });
