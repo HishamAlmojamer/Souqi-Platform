@@ -1,9 +1,10 @@
 import { Link } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -35,7 +36,7 @@ export default function SupplierGatewayScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="supplier" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.heading}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>بوابة المورد</Text>
@@ -48,9 +49,9 @@ export default function SupplierGatewayScreen() {
           </View>
 
           <View style={styles.stats}>
-            <Metric label="الدعوات" value={formatNumber(invitations.length).padStart(2, '0')} />
-            <Metric label="بانتظار العرض" value={formatNumber(pending).padStart(2, '0')} />
-            <Metric label="عروض مقدمة" value={formatNumber(accepted).padStart(2, '0')} />
+            <Metric label="الدعوات" value={formatNumber(invitations.length).padStart(2, '0')} delay={40} />
+            <Metric label="بانتظار العرض" value={formatNumber(pending).padStart(2, '0')} delay={85} />
+            <Metric label="عروض مقدمة" value={formatNumber(accepted).padStart(2, '0')} delay={130} />
           </View>
 
           <ApiFeedback
@@ -64,11 +65,12 @@ export default function SupplierGatewayScreen() {
 
           <Text style={styles.sectionTitle}>طلبات مدعو إليها</Text>
           <View style={styles.list}>
-            {invitations.map((invitation) => {
+            {invitations.map((invitation, index) => {
               const rfq = invitation.rfq;
               const status = invitationLabels[invitation.status] ?? invitation.status;
               return (
-                <View key={invitation.id} style={styles.card}>
+                <Stagger key={invitation.id} index={index} baseDelay={120} step={45} translateY={8}>
+                <View style={styles.card}>
                   <View style={styles.cardHeader}>
                     <View style={styles.cardHeaderCopy}>
                       <Text style={styles.cardTitle}>{rfq?.title ?? 'طلب توريد'}</Text>
@@ -94,21 +96,23 @@ export default function SupplierGatewayScreen() {
                     </Text>
                   </Link>
                 </View>
+                </Stagger>
               );
             })}
           </View>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, delay = 0 }: { label: string; value: string; delay?: number }) {
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metric}>
+    <Animated.View style={[styles.metric, entranceStyle]}>
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

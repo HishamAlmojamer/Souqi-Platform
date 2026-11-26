@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, ScreenEntrance } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -126,7 +127,7 @@ export default function EditDraftRfqScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="request" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>تعديل طلب التوريد</Text>
@@ -241,7 +242,7 @@ export default function EditDraftRfqScreen() {
                 </View>
               ) : null}
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <FeedbackBanner text={error} tone="error" /> : null}
 
               <View style={styles.actions}>
                 <Pressable
@@ -255,7 +256,7 @@ export default function EditDraftRfqScreen() {
               </View>
             </View>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

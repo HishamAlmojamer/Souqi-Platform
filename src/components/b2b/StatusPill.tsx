@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
 
+import { useEntranceStyle } from './motion';
 import { colors, radii, spacing, withAlpha } from './palette';
 import { fonts } from './typography';
 import type { Tone } from '@/data/api';
@@ -8,6 +9,7 @@ type StatusPillProps = {
   label: string;
   tone?: Tone;
   small?: boolean;
+  delay?: number;
 };
 
 const TONE_STYLES: Record<Tone, { view: object; text: object }> = {
@@ -29,12 +31,13 @@ const TONE_STYLES: Record<Tone, { view: object; text: object }> = {
   },
 };
 
-export function StatusPill({ label, tone = 'muted', small = false }: StatusPillProps) {
+export function StatusPill({ label, tone = 'muted', small = false, delay = 0 }: StatusPillProps) {
   const toneStyle = TONE_STYLES[tone];
+  const entranceStyle = useEntranceStyle({ delay, duration: 240, translateY: 4 });
   return (
-    <View style={[styles.pill, small && styles.pillSmall, toneStyle.view]}>
+    <Animated.View style={[styles.pill, small && styles.pillSmall, toneStyle.view, entranceStyle]}>
       <Text style={[styles.text, small && styles.textSmall, toneStyle.text]}>{label}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

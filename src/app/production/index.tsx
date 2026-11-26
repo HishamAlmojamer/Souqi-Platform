@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -116,7 +117,7 @@ export default function ProductionScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="production" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.kicker}>لوحة التنفيذ</Text>
@@ -133,10 +134,10 @@ export default function ProductionScreen() {
           <ApiFeedback loading={loading} error={error} onRetry={refetch} />
 
           <View style={styles.statsRow}>
-            <MetricCard label="أوامر الشراء" value={formatNumber(purchaseOrders.length).padStart(2, '0')} detail="المرتبطة بحسابك" />
-            <MetricCard label="عينات تنتظر قرارًا" value={formatNumber(metrics.samplesPending).padStart(2, '0')} detail="بانتظار المتابعة" />
-            <MetricCard label="مراحل نشطة" value={formatNumber(metrics.activeMilestones).padStart(2, '0')} detail="قيد التنفيذ" />
-            <MetricCard label="أوامر مكتملة" value={formatNumber(purchaseOrders.filter((order) => order.status === 'COMPLETED').length).padStart(2, '0')} detail="تم تسليمها" />
+            <MetricCard label="أوامر الشراء" value={formatNumber(purchaseOrders.length).padStart(2, '0')} detail="المرتبطة بحسابك" delay={40} />
+            <MetricCard label="عينات تنتظر قرارًا" value={formatNumber(metrics.samplesPending).padStart(2, '0')} detail="بانتظار المتابعة" delay={85} />
+            <MetricCard label="مراحل نشطة" value={formatNumber(metrics.activeMilestones).padStart(2, '0')} detail="قيد التنفيذ" delay={130} />
+            <MetricCard label="أوامر مكتملة" value={formatNumber(purchaseOrders.filter((order) => order.status === 'COMPLETED').length).padStart(2, '0')} detail="تم تسليمها" delay={175} />
           </View>
 
           {purchaseOrders.length > 0 ? (
@@ -146,7 +147,7 @@ export default function ProductionScreen() {
                 {orderDetails.map((order) => {
                   const selected = order.id === activeId;
                   return (
-                    <Pressable
+                    <MotionPressable
                       key={order.id}
                       accessibilityRole="button"
                       accessibilityState={{ selected }}
@@ -157,7 +158,7 @@ export default function ProductionScreen() {
                         {order.rfq?.title ?? 'أمر توريد'}
                       </Text>
                       <Text style={[styles.pickerChipId, selected && styles.pickerChipIdActive]}>PO · {order.id.slice(0, 8)}</Text>
-                    </Pressable>
+                    </MotionPressable>
                   );
                 })}
               </ScrollView>
@@ -272,24 +273,24 @@ export default function ProductionScreen() {
                   {activeMilestone && hasPermission('milestone.manage') ? (
                     <View style={styles.actionRow}>
                       {activeMilestone.status === 'PENDING' ? (
-                        <Pressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
+                        <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
                           <Text style={styles.actionButtonText}>بدء المرحلة</Text>
-                        </Pressable>
+                        </MotionPressable>
                       ) : null}
                       {activeMilestone.status === 'ACTIVE' ? (
-                        <Pressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('DONE'); }} style={styles.actionButton}>
+                        <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('DONE'); }} style={styles.actionButton}>
                           <Text style={styles.actionButtonText}>إكمال المرحلة</Text>
-                        </Pressable>
+                        </MotionPressable>
                       ) : null}
                       {activeMilestone.status === 'BLOCKED' ? (
-                        <Pressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
+                        <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
                           <Text style={styles.actionButtonText}>إعادة التشغيل</Text>
-                        </Pressable>
+                        </MotionPressable>
                       ) : null}
                       {activeMilestone.status !== 'DONE' ? (
-                        <Pressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('BLOCKED'); }} style={styles.secondaryActionButton}>
+                        <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('BLOCKED'); }} style={styles.secondaryActionButton}>
                           <Text style={styles.secondaryActionText}>توقف</Text>
-                        </Pressable>
+                        </MotionPressable>
                       ) : null}
                     </View>
                   ) : null}
@@ -330,7 +331,7 @@ export default function ProductionScreen() {
                   {latestSample && sampleActions.length > 0 && hasPermission('sample.manage') ? (
                     <View style={styles.sampleActions}>
                       {sampleActions.map((action) => (
-                        <Pressable
+                        <MotionPressable
                           key={action.status}
                           accessibilityRole="button"
                           disabled={working}
@@ -338,7 +339,7 @@ export default function ProductionScreen() {
                           style={styles.sampleActionButton}
                         >
                           <Text style={styles.sampleActionText}>{action.label}</Text>
-                        </Pressable>
+                        </MotionPressable>
                       ))}
                     </View>
                   ) : null}
@@ -382,7 +383,7 @@ export default function ProductionScreen() {
             </View>
           )}
 
-          {actionError ? <Text style={styles.actionError}>{actionError}</Text> : null}
+          {actionError ? <FeedbackBanner text={actionError} tone="error" /> : null}
 
           <View style={[styles.bottomPanel, wide && styles.bottomPanelWide]}>
             <View style={styles.bottomHeader}>
@@ -408,19 +409,20 @@ export default function ProductionScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+function MetricCard({ label, value, detail, delay = 0 }: { label: string; value: string; detail: string; delay?: number }) {
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metricCard}>
+    <Animated.View style={[styles.metricCard, entranceStyle]}>
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricDetail}>{detail}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { MotionPressable, ScreenEntrance, Stagger } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { fonts, typeScale } from '@/components/b2b/typography';
@@ -29,6 +30,7 @@ export default function LandingScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="home" />
       <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
+        <ScreenEntrance style={styles.pageInner}>
         <View style={[styles.hero, { paddingHorizontal: wide ? 44 : gutter }]}>
           <View style={[styles.heroGlow, styles.decorative]} />
           <View style={[styles.heroOrb, styles.decorative]} />
@@ -47,20 +49,20 @@ export default function LandingScreen() {
                 اجمع متطلباتك، قارن عروض المصانع، وتابع عيناتك وإنتاجك — في مساحة واحدة صُممت للمشتري العربي.
               </Text>
               <View style={[styles.heroActions, !tablet && styles.heroActionsStack]}>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   onPress={() => router.navigate('/rfq/new' as any)}
-                  style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+                  style={styles.primaryButton}
                 >
                   <Text style={styles.primaryButtonText}>ابدأ طلب عروض الأسعار <Text style={styles.buttonArrow}>←</Text></Text>
-                </Pressable>
-                <Pressable
+                </MotionPressable>
+                <MotionPressable
                   accessibilityRole="button"
                   onPress={() => router.navigate('/workspace' as any)}
-                  style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                  style={styles.secondaryButton}
                 >
                   <Text style={styles.secondaryButtonText}>استكشف مساحة المشتري</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
               <Text style={[typeScale.caption, styles.heroFootnote]}>مساحة مرتبطة بخادم سوقي · تتطلب تسجيل الدخول لإنشاء الطلبات.</Text>
             </View>
@@ -159,26 +161,35 @@ export default function LandingScreen() {
             ))}
           </View>
           <View style={[styles.sectorGrid, { flexDirection: tablet ? 'row-reverse' : 'column', flexWrap: 'wrap' }]}>
-            {sectors.map((sector) => (
-              <Pressable
+            {sectors.map((sector, index) => (
+              <Stagger
                 key={sector.index}
-                accessibilityRole="button"
-                accessibilityLabel={`${sector.title} — ${sector.note}`}
-                onPress={() => router.navigate('/rfq/new' as any)}
-                style={({ pressed }) => [styles.sectorCard, sectorSizing, pressed && styles.sectorCardPressed]}
+                index={index}
+                baseDelay={160}
+                step={55}
+                duration={300}
+                translateY={10}
+                style={[styles.sectorCard, sectorSizing]}
               >
-                <View style={styles.sectorTopline}>
-                  <Text style={styles.sectorIndex}>{sector.index}</Text>
-                  <View style={styles.sectorSymbolWrap}><Text style={styles.sectorSymbol}>{sector.symbol}</Text></View>
-                </View>
-                <View style={styles.sectorBody}>
-                  <Text style={styles.sectorTitle}>{sector.title}</Text>
-                  <Text style={styles.sectorNote}>{sector.note}</Text>
-                </View>
-                <View style={styles.sectorFooter}>
-                  <View style={styles.sectorArrowWrap}><Text style={styles.sectorArrow}>←</Text></View>
-                </View>
-              </Pressable>
+                <MotionPressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${sector.title} — ${sector.note}`}
+                  onPress={() => router.navigate('/rfq/new' as any)}
+                  style={styles.sectorCardInner}
+                >
+                  <View style={styles.sectorTopline}>
+                    <Text style={styles.sectorIndex}>{sector.index}</Text>
+                    <View style={styles.sectorSymbolWrap}><Text style={styles.sectorSymbol}>{sector.symbol}</Text></View>
+                  </View>
+                  <View style={styles.sectorBody}>
+                    <Text style={styles.sectorTitle}>{sector.title}</Text>
+                    <Text style={styles.sectorNote}>{sector.note}</Text>
+                  </View>
+                  <View style={styles.sectorFooter}>
+                    <View style={styles.sectorArrowWrap}><Text style={styles.sectorArrow}>←</Text></View>
+                  </View>
+                </MotionPressable>
+              </Stagger>
             ))}
           </View>
         </View>
@@ -205,17 +216,18 @@ export default function LandingScreen() {
               <Text style={styles.ctaKicker}>جاهز لترتيب أول طلب؟</Text>
               <Text style={styles.ctaTitle}>خلّ مواصفاتك تبدأ الحوار.</Text>
             </View>
-            <Pressable
+            <MotionPressable
               accessibilityRole="button"
               onPress={() => router.navigate('/rfq/new' as any)}
-              style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaButtonPressed]}
+              style={styles.ctaButton}
             >
               <Text style={styles.ctaButtonText}>إنشاء طلب توريد <Text>←</Text></Text>
-            </Pressable>
+            </MotionPressable>
           </View>
           <Text style={styles.ctaDisclaimer}>تُحفظ الطلبات والعروض في قاعدة البيانات، وتظهر حسب صلاحياتك ومؤسستك.</Text>
         </View>
         <Text style={styles.footer}>سوقي © ٢٠٢٦ · منصة توريد وتصنيع بين الشركات</Text>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
@@ -248,6 +260,7 @@ function ProcessStep({ number, title, body, last }: { number: string; title: str
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
   page: { paddingBottom: 32, backgroundColor: colors.cream },
+  pageInner: { width: '100%' },
   decorative: { pointerEvents: 'none' },
 
   hero: {
@@ -600,6 +613,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     justifyContent: 'space-between',
   },
+  sectorCardInner: { flex: 1 },
   sectorCardFull: { flexBasis: '100%', flexGrow: 1 },
   sectorCardHalf: { flexBasis: '46%', flexGrow: 1, minHeight: 176 },
   sectorCardQuad: { flexBasis: '22%', flexGrow: 1, minHeight: 186 },

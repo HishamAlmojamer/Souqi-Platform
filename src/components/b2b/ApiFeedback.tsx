@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { LoadingDots, MotionPressable } from './motion';
 import { colors, radii, shadows, spacing } from './palette';
 import { fonts } from './typography';
 import { errorMessage } from '@/data/api';
@@ -24,8 +25,7 @@ export function ApiFeedback({
   if (loading) {
     return (
       <View style={styles.state}>
-        <ActivityIndicator color={colors.green} />
-        <Text style={styles.stateText}>جارٍ تحميل البيانات من الخادم...</Text>
+        <LoadingDots color={colors.green} label="جارٍ تحميل البيانات من الخادم..." />
       </View>
     );
   }
@@ -36,9 +36,9 @@ export function ApiFeedback({
         <Text style={styles.stateTitle}>تعذر تحميل البيانات</Text>
         <Text style={styles.stateText}>{errorMessage(error)}</Text>
         {onRetry ? (
-          <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
+          <MotionPressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
             <Text style={styles.retryText}>إعادة المحاولة</Text>
-          </Pressable>
+          </MotionPressable>
         ) : null}
       </View>
     );

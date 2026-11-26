@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -151,7 +152,7 @@ export default function NewRFQScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="request" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={[styles.content, wide && styles.contentWide]}>
+        <ScreenEntrance style={[styles.content, wide && styles.contentWide]}>
           <View style={styles.topRow}>
             <View>
               <Text style={styles.kicker}>إنشاء طلب توريد</Text>
@@ -181,7 +182,7 @@ export default function NewRFQScreen() {
                 <Text style={styles.sectionLabel}>القطاع</Text>
                 <View style={styles.sectorGrid}>
                   {industries.map((industry) => (
-                    <Pressable
+                    <MotionPressable
                       key={industry.id}
                       accessibilityRole="button"
                       onPress={() => updateIndustry(industry.id)}
@@ -190,7 +191,7 @@ export default function NewRFQScreen() {
                       <Text style={[styles.sectorChipText, industry.id === selectedIndustryId && styles.sectorChipTextActive]}>
                         {industry.nameAr}
                       </Text>
-                    </Pressable>
+                    </MotionPressable>
                   ))}
                 </View>
               </View>
@@ -287,7 +288,7 @@ export default function NewRFQScreen() {
                   {field.type === 'choice' ? (
                     <View style={styles.choiceList}>
                       {(field.options ?? []).map((option) => (
-                        <Pressable
+                        <MotionPressable
                           key={option}
                           accessibilityRole="button"
                           onPress={() => updateField(field.id, option)}
@@ -304,7 +305,7 @@ export default function NewRFQScreen() {
                           >
                             {option}
                           </Text>
-                        </Pressable>
+                        </MotionPressable>
                       ))}
                     </View>
                   ) : (
@@ -322,25 +323,25 @@ export default function NewRFQScreen() {
                 </View>
               ))}
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <FeedbackBanner text={error} tone="error" /> : null}
 
               <View style={styles.actions}>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={createRfq.isPending || publishRfq.isPending}
                   onPress={() => { void handleSubmit(true); }}
                   style={[styles.primaryButton, (createRfq.isPending || publishRfq.isPending) && styles.buttonDisabled]}
                 >
                   <Text style={styles.primaryButtonText}>حفظ ونشر الطلب</Text>
-                </Pressable>
-                <Pressable
+                </MotionPressable>
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={createRfq.isPending || publishRfq.isPending}
                   onPress={() => { void handleSubmit(false); }}
                   style={styles.ghostButton}
                 >
                   <Text style={styles.ghostButtonText}>حفظ كمسودة</Text>
-                </Pressable>
+                </MotionPressable>
                 <Link href={'/workspace' as any} asChild>
                   <Pressable accessibilityRole="button" style={styles.ghostButton}>
                     <Text style={styles.ghostButtonText}>إلغاء</Text>
@@ -349,7 +350,7 @@ export default function NewRFQScreen() {
               </View>
             </View>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

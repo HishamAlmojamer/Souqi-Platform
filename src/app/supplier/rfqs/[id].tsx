@@ -1,10 +1,11 @@
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -110,7 +111,7 @@ export default function SupplierQuoteScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="supplier" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/supplier' as any} asChild>
               <Text style={styles.back}>← عودة للدعوات</Text>
@@ -210,16 +211,16 @@ export default function SupplierQuoteScreen() {
                 <Text style={styles.totalLabel}>الإجمالي التقديري</Text>
                 <Text style={styles.totalValue}>{formatNumber(total)} {rfq.currency}</Text>
               </View>
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <FeedbackBanner text={error} tone="error" /> : null}
               {submittedQuote ? (
-                <View style={styles.success}>
-                  <Text style={styles.successText}>تم تسجيل العرض {submittedQuote.id} بنجاح.</Text>
+                <>
+                  <FeedbackBanner text={`تم تسجيل العرض ${submittedQuote.id} بنجاح.`} tone="success" />
                   <Link href={'/supplier' as any} asChild>
                     <Text style={styles.successLink}>العودة إلى الدعوات ←</Text>
                   </Link>
-                </View>
+                </>
               ) : null}
-              <Pressable
+              <MotionPressable
                 accessibilityRole="button"
                 disabled={submitQuote.isPending || rfq.status !== 'PUBLISHED'}
                 onPress={() => { void handleSubmit(); }}
@@ -228,10 +229,10 @@ export default function SupplierQuoteScreen() {
                 <Text style={styles.submitText}>
                   {rfq.status === 'PUBLISHED' ? 'إرسال العرض للمشتري' : 'الطلب غير مفتوح لاستقبال العروض'}
                 </Text>
-              </Pressable>
+              </MotionPressable>
             </View>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

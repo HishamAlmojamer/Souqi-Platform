@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark } from './BrandMark';
+import { PulseBadge, TabIndicator } from './motion';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
 import { containerStyle, useResponsive } from './responsive';
 import { fonts } from './typography';
@@ -152,7 +153,12 @@ function HeaderLink({ href, label, active, badge = 0, onPress }: { href: string;
       ]}
     >
       <Text style={[styles.navText, active && styles.navTextActive]}>{label}</Text>
-      {badge > 0 ? <View style={styles.navBadge}><Text style={styles.navBadgeText}>{badge > 9 ? '٩+' : badge}</Text></View> : null}
+      {badge > 0 ? (
+        <PulseBadge style={styles.navBadge}>
+          <Text style={styles.navBadgeText}>{badge > 9 ? '٩+' : badge}</Text>
+        </PulseBadge>
+      ) : null}
+      <TabIndicator active={active} color={colors.accent} />
     </Pressable>
   );
 }
@@ -203,6 +209,7 @@ const styles = StyleSheet.create({
   },
   nav: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs },
   navLink: {
+    position: 'relative',
     minHeight: 42,
     justifyContent: 'center',
     alignItems: 'center',

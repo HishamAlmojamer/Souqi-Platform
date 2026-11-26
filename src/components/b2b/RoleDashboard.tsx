@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from './ApiFeedback';
 import { AppHeader } from './AppHeader';
+import { MotionPressable, ScreenEntrance, useEntranceStyle } from './motion';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
 import { containerStyle, useResponsive } from './responsive';
 import { StatusPill } from './StatusPill';
@@ -71,7 +72,7 @@ export function RoleDashboard() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="dashboard" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>{copy.kicker}</Text>
@@ -89,13 +90,13 @@ export function RoleDashboard() {
                 ) : null}
               </View>
             </View>
-            <Pressable
+            <MotionPressable
               accessibilityRole="button"
               onPress={() => void logout()}
-              style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
+              style={styles.logoutButton}
             >
               <Text style={styles.logoutText}>تسجيل الخروج</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
 
           <View style={styles.membershipPanel}>
@@ -116,10 +117,10 @@ export function RoleDashboard() {
           <ApiFeedback loading={loading} error={error} onRetry={refetch} />
 
           <View style={styles.statsRow}>
-            <MetricCard label="طلبات توريد مفتوحة" value={formatNumber(metrics.openRfqs).padStart(2, '0')} detail="من الخادم" accent="green" />
-            <MetricCard label="العروض الواردة" value={formatNumber(metrics.quoteCount).padStart(2, '0')} detail="للمقارنة والمراجعة" accent="amber" />
-            <MetricCard label="صلاحياتك الفعّالة" value={formatNumber(permissions.length).padStart(2, '0')} detail={`الدور: ${roleLabel(role)}`} accent="blue" />
-            <MetricCard label="عضوياتك النشطة" value={formatNumber(memberships.length).padStart(2, '0')} detail="مؤسسات مرتبطة بحسابك" accent="ink" />
+            <MetricCard label="طلبات توريد مفتوحة" value={formatNumber(metrics.openRfqs).padStart(2, '0')} detail="من الخادم" accent="green" delay={40} />
+            <MetricCard label="العروض الواردة" value={formatNumber(metrics.quoteCount).padStart(2, '0')} detail="للمقارنة والمراجعة" accent="amber" delay={85} />
+            <MetricCard label="صلاحياتك الفعّالة" value={formatNumber(permissions.length).padStart(2, '0')} detail={`الدور: ${roleLabel(role)}`} accent="blue" delay={130} />
+            <MetricCard label="عضوياتك النشطة" value={formatNumber(memberships.length).padStart(2, '0')} detail="مؤسسات مرتبطة بحسابك" accent="ink" delay={175} />
           </View>
 
           <View style={styles.sectionBlock}>
@@ -219,23 +220,24 @@ export function RoleDashboard() {
           </View>
 
           <Text style={styles.footer}>سوقي · لوحة مخصصة حسب دورك · الصلاحيات مطبقة من الخادم</Text>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MetricCard({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink' }) {
+function MetricCard({ label, value, detail, accent, delay = 0 }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink'; delay?: number }) {
   const accentColor = accent === 'green' ? colors.green : accent === 'amber' ? colors.amber : accent === 'blue' ? colors.blue : colors.inkSoft;
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metricCard}>
+    <Animated.View style={[styles.metricCard, entranceStyle]}>
       <View style={styles.metricTop}>
         <View style={[styles.metricAccent, { backgroundColor: accentColor }]} />
         <Text style={styles.metricLabel}>{label}</Text>
       </View>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricDetail}>{detail}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

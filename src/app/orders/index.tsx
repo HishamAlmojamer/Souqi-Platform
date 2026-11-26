@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { MotionPressable, ScreenEntrance, Stagger, TabIndicator, useEntranceStyle } from '@/components/b2b/motion';
 import { colors, radii, shadows, spacing } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { StatusPill } from '@/components/b2b/StatusPill';
@@ -59,7 +60,7 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="orders" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={[styles.headingRow, wide && styles.headingRowWide]}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>مركز المتابعة</Text>
@@ -86,10 +87,10 @@ export default function OrdersScreen() {
           </View>
 
           <View style={styles.metrics}>
-            <SummaryMetric label="إجمالي الطلبات" value={formatNumber(counts.all)} tone="green" />
-            <SummaryMetric label="تحتاج مراجعة" value={formatNumber(counts.offers)} tone="amber" />
-            <SummaryMetric label="تم الترسية" value={formatNumber(counts.selected)} tone="blue" />
-            <SummaryMetric label="المسودات" value={formatNumber(counts.draft)} tone="muted" />
+            <SummaryMetric label="إجمالي الطلبات" value={formatNumber(counts.all)} tone="green" delay={40} />
+            <SummaryMetric label="تحتاج مراجعة" value={formatNumber(counts.offers)} tone="amber" delay={85} />
+            <SummaryMetric label="تم الترسية" value={formatNumber(counts.selected)} tone="blue" delay={130} />
+            <SummaryMetric label="المسودات" value={formatNumber(counts.draft)} tone="muted" delay={175} />
           </View>
 
           <View style={styles.toolbar}>
@@ -110,7 +111,7 @@ export default function OrdersScreen() {
               {filters.map((filter) => {
                 const selected = activeFilter === filter.id;
                 return (
-                  <Pressable
+                  <MotionPressable
                     key={filter.id}
                     accessibilityRole="tab"
                     accessibilityState={{ selected }}
@@ -119,7 +120,8 @@ export default function OrdersScreen() {
                   >
                     <Text style={[styles.filterText, selected && styles.filterTextActive]}>{filter.label}</Text>
                     <Text style={[styles.filterCount, selected && styles.filterCountActive]}>{formatNumber(counts[filter.id])}</Text>
-                  </Pressable>
+                    <TabIndicator active={selected} color={colors.accent} />
+                  </MotionPressable>
                 );
               })}
             </ScrollView>
@@ -139,11 +141,11 @@ export default function OrdersScreen() {
             onRetry={() => { void rfqsQuery.refetch(); }}
           />
 
-          {visibleRfqs.map((request) => {
+          {visibleRfqs.map((request, index) => {
             const status = statusInfo(RFQ_STATUS, request.status);
             return (
+              <Stagger key={request.id} index={index} baseDelay={140} step={42} translateY={8}>
               <Link
-                key={request.id}
                 href={{ pathname: '/rfq/[id]' as any, params: { id: request.id } } as any}
                 asChild
               >
@@ -174,24 +176,26 @@ export default function OrdersScreen() {
                   </View>
                 </Pressable>
               </Link>
+              </Stagger>
             );
           })}
 
           <Text style={styles.footer}>سوقي · سجل الطلبات من الخادم · الحالات لا تمثل التزامات تجارية</Text>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function SummaryMetric({ label, value, tone }: { label: string; value: string; tone: 'green' | 'amber' | 'blue' | 'muted' }) {
+function SummaryMetric({ label, value, tone, delay = 0 }: { label: string; value: string; tone: 'green' | 'amber' | 'blue' | 'muted'; delay?: number }) {
   const toneStyle = tone === 'green' ? styles.metricGreen : tone === 'amber' ? styles.metricAmber : tone === 'blue' ? styles.metricBlue : styles.metricMuted;
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metricCard}>
+    <Animated.View style={[styles.metricCard, entranceStyle]}>
       <View style={[styles.metricMark, toneStyle]} />
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
   searchGlyph: { color: colors.green, fontSize: 20, marginLeft: 8 },
   searchInput: { flex: 1, paddingVertical: 8, color: colors.ink, fontSize: 11, writingDirection: 'rtl' },
   filters: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 2 },
-  filterButton: { minHeight: 34, borderWidth: 1, borderColor: colors.line, borderRadius: 7, backgroundColor: colors.paper, paddingHorizontal: 10, flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
+  filterButton: { position: 'relative', overflow: 'hidden', minHeight: 34, borderWidth: 1, borderColor: colors.line, borderRadius: 7, backgroundColor: colors.paper, paddingHorizontal: 10, flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
   filterButtonActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
   filterText: { color: colors.inkSoft, fontSize: 9, fontWeight: '700', writingDirection: 'rtl' },
   filterTextActive: { color: '#FFFFFF' },

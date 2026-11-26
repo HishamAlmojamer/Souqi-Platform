@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandMark } from './BrandMark';
+import { ScreenEntrance } from './motion';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
 import { containerStyle, useResponsive } from './responsive';
 import { fonts, typeScale } from './typography';
@@ -36,7 +37,7 @@ export function AuthLayout({ children, title, subtitle, asideTitle, asideText }:
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: gutter }]} keyboardShouldPersistTaps="handled">
-        <View style={[styles.content, wide && styles.contentWide]}>
+        <ScreenEntrance style={[styles.content, wide && styles.contentWide]}>
           <View style={styles.formColumn}>
             <View style={styles.formHeading}>
               <Text style={styles.kicker}>مساحة آمنة لأعمالك</Text>
@@ -57,7 +58,7 @@ export function AuthLayout({ children, title, subtitle, asideTitle, asideText }:
               <Text style={styles.asideFootnote}>نموذج تجريبي · استخدم بيانات اختبار ولا تدخل معلومات إنتاجية.</Text>
             </View>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

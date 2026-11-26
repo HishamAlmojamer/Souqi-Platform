@@ -1,10 +1,11 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { MotionPressable, ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { formatNumber, supplierCapabilities, useApiQuery, type ApiSupplier } from '@/data/api';
@@ -80,7 +81,7 @@ export default function SuppliersDashboardScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="suppliers" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>لوحة الموردين</Text>
@@ -95,10 +96,10 @@ export default function SuppliersDashboardScreen() {
           </View>
 
           <View style={styles.statsRow}>
-            <MetricCard label="الموردون المعتمدون" value={formatNumber(suppliers.length).padStart(2, '0')} detail="من سجل المؤسسات" accent="green" />
-            <MetricCard label="لديهم مهلة تسليم" value={formatNumber(withLeadTime).padStart(2, '0')} detail="بيانات قابلة للمقارنة" accent="blue" />
-            <MetricCard label="متوسط التقييم" value={scores.length > 0 ? String(avgScore) : '—'} detail="من ملفات الموردين" accent="amber" />
-            <MetricCard label="حالة الدليل" value="مباشر" detail="مرتبط بالخادم" accent="ink" />
+            <MetricCard label="الموردون المعتمدون" value={formatNumber(suppliers.length).padStart(2, '0')} detail="من سجل المؤسسات" accent="green" delay={40} />
+            <MetricCard label="لديهم مهلة تسليم" value={formatNumber(withLeadTime).padStart(2, '0')} detail="بيانات قابلة للمقارنة" accent="blue" delay={85} />
+            <MetricCard label="متوسط التقييم" value={scores.length > 0 ? String(avgScore) : '—'} detail="من ملفات الموردين" accent="amber" delay={130} />
+            <MetricCard label="حالة الدليل" value="مباشر" detail="مرتبط بالخادم" accent="ink" delay={175} />
           </View>
 
           <ApiFeedback
@@ -125,16 +126,16 @@ export default function SuppliersDashboardScreen() {
               />
             </View>
             <View style={styles.filterRow}>
-              <Pressable
+              <MotionPressable
                 accessibilityRole="button"
                 accessibilityState={{ selected: verifiedOnly }}
                 onPress={() => setVerifiedOnly((current) => !current)}
                 style={[styles.toggle, verifiedOnly && styles.toggleActive]}
               >
                 <Text style={[styles.toggleText, verifiedOnly && styles.toggleTextActive]}>الموثقون فقط</Text>
-              </Pressable>
+              </MotionPressable>
               {(Object.keys(sortLabels) as SortOption[]).map((option) => (
-                <Pressable
+                <MotionPressable
                   key={option}
                   accessibilityRole="button"
                   accessibilityState={{ selected: sort === option }}
@@ -144,20 +145,20 @@ export default function SuppliersDashboardScreen() {
                   <Text style={[styles.filterChipText, sort === option && styles.filterChipTextActive]}>
                     {sortLabels[option]}
                   </Text>
-                </Pressable>
+                </MotionPressable>
               ))}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.countryRow}>
-              <Pressable
+              <MotionPressable
                 accessibilityRole="button"
                 accessibilityState={{ selected: country === 'all' }}
                 onPress={() => setCountry('all')}
                 style={[styles.countryChip, country === 'all' && styles.countryChipActive]}
               >
                 <Text style={[styles.countryChipText, country === 'all' && styles.countryChipTextActive]}>كل الدول</Text>
-              </Pressable>
+              </MotionPressable>
               {countries.map((code) => (
-                <Pressable
+                <MotionPressable
                   key={code}
                   accessibilityRole="button"
                   accessibilityState={{ selected: country === code }}
@@ -167,7 +168,7 @@ export default function SuppliersDashboardScreen() {
                   <Text style={[styles.countryChipText, country === code && styles.countryChipTextActive]}>
                     {countryLabels[code] ?? code}
                   </Text>
-                </Pressable>
+                </MotionPressable>
               ))}
             </ScrollView>
             <Text style={styles.resultCount}>{formatNumber(visibleSuppliers.length)} مورد مطابق</Text>
@@ -177,9 +178,10 @@ export default function SuppliersDashboardScreen() {
             <View style={styles.mainColumn}>
               <Text style={styles.sectionTitle}>الموردون المتاحون</Text>
               <View style={styles.list}>
-                {visibleSuppliers.map(({ supplier, capability }) => {
+                {visibleSuppliers.map(({ supplier, capability }, index) => {
                   return (
-                    <View key={supplier.id} style={styles.card}>
+                    <Stagger key={supplier.id} index={index} baseDelay={130} step={42} translateY={8}>
+                    <View style={styles.card}>
                       <View style={styles.cardHeader}>
                         <View style={styles.cardHeaderText}>
                           <Text style={styles.name}>{supplier.displayName}</Text>
@@ -220,6 +222,7 @@ export default function SuppliersDashboardScreen() {
                         </Link>
                       </View>
                     </View>
+                    </Stagger>
                   );
                 })}
               </View>
@@ -252,23 +255,24 @@ export default function SuppliersDashboardScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MetricCard({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink' }) {
+function MetricCard({ label, value, detail, accent, delay = 0 }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink'; delay?: number }) {
   const accentColor = accent === 'green' ? colors.green : accent === 'amber' ? colors.amber : accent === 'blue' ? colors.blue : colors.inkSoft;
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metricCard}>
+    <Animated.View style={[styles.metricCard, entranceStyle]}>
       <View style={styles.metricTop}>
         <Text style={[styles.metricAccent, { backgroundColor: accentColor }]} />
         <Text style={styles.metricLabel}>{label}</Text>
       </View>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricDetail}>{detail}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

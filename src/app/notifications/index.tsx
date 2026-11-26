@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance, Stagger, TabIndicator } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -63,21 +64,21 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="notifications" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.heading}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>مركز الإشعارات</Text>
               <Text style={styles.title}>آخر المستجدات</Text>
               <Text style={styles.subtitle}>تابع تحديثات الطلبات والعروض والأدلة في مكان واحد.</Text>
             </View>
-            <Pressable
+            <MotionPressable
               accessibilityRole="button"
               disabled={markAll.isPending || unreadCount === 0}
               onPress={() => { void handleMarkAll(); }}
               style={[styles.markAll, unreadCount === 0 && styles.markAllDisabled]}
             >
               <Text style={styles.markAllText}>تحديد الكل كمقروء</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
 
           <View style={styles.stats}>
@@ -92,25 +93,27 @@ export default function NotificationsScreen() {
           </View>
 
           <View style={styles.filters}>
-            <Pressable
+            <MotionPressable
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'all' }}
               onPress={() => setFilter('all')}
               style={[styles.filter, filter === 'all' && styles.filterActive]}
             >
               <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>الكل</Text>
-            </Pressable>
-            <Pressable
+              <TabIndicator active={filter === 'all'} color={colors.green} />
+            </MotionPressable>
+            <MotionPressable
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'unread' }}
               onPress={() => setFilter('unread')}
               style={[styles.filter, filter === 'unread' && styles.filterActive]}
             >
               <Text style={[styles.filterText, filter === 'unread' && styles.filterTextActive]}>غير مقروءة</Text>
-            </Pressable>
+              <TabIndicator active={filter === 'unread'} color={colors.green} />
+            </MotionPressable>
           </View>
 
-          {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
+          {actionError ? <FeedbackBanner text={actionError} tone="error" /> : null}
 
           <ApiFeedback
             loading={notificationsQuery.isLoading}
@@ -122,9 +125,9 @@ export default function NotificationsScreen() {
           />
 
           <View style={styles.list}>
-            {visible.map((notification) => (
+            {visible.map((notification, index) => (
+              <Stagger key={notification.id} index={index} baseDelay={130} step={38} translateY={8}>
               <View
-                key={notification.id}
                 style={[styles.notification, notification.read ? styles.notificationRead : styles.notificationUnread]}
               >
                 <View style={styles.notificationHead}>
@@ -137,14 +140,14 @@ export default function NotificationsScreen() {
                 <Text style={styles.notificationBody}>{notification.body}</Text>
                 <View style={styles.actions}>
                   {!notification.read ? (
-                    <Pressable
+                    <MotionPressable
                       accessibilityRole="button"
                       disabled={markRead.isPending}
                       onPress={() => { void handleMarkOne(notification.id); }}
                       style={styles.readButton}
                     >
                       <Text style={styles.readButtonText}>تحديد كمقروء</Text>
-                    </Pressable>
+                    </MotionPressable>
                   ) : (
                     <Text style={styles.readLabel}>مقروء</Text>
                   )}
@@ -157,9 +160,10 @@ export default function NotificationsScreen() {
                   ) : null}
                 </View>
               </View>
+              </Stagger>
             ))}
           </View>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   statValue: { color: colors.ink, fontSize: 24, fontWeight: '900', textAlign: 'right', marginTop: 9 },
   statValueAccent: { color: colors.greenDark },
   filters: { flexDirection: 'row-reverse', gap: 8, marginTop: 18, marginBottom: 14 },
-  filter: { minHeight: 36, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
+  filter: { position: 'relative', overflow: 'hidden', minHeight: 36, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
   filterActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
   filterText: { color: colors.inkSoft, fontSize: 10, fontWeight: '800', writingDirection: 'rtl' },
   filterTextActive: { color: '#FFFFFF' },

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -116,7 +117,7 @@ export default function RFQDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="orders" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/workspace' as any} asChild>
               <Pressable accessibilityRole="button" style={styles.secondaryButton}>
@@ -163,13 +164,13 @@ export default function RFQDetailScreen() {
                   <QuickFact label="تاريخ الإنشاء" value={formatDate(rfq.createdAt)} />
                 </View>
                 {rfq.status === 'DRAFT' && hasPermission('rfq.publish') ? (
-                  <Pressable
+                  <MotionPressable
                     accessibilityRole="button"
                     style={styles.actionButton}
                     onPress={() => { void runAction(`/api/rfqs/${rfq.id}/status`, { status: 'PUBLISHED' }); }}
                   >
                     <Text style={styles.actionButtonText}>نشر الطلب للموردين</Text>
-                  </Pressable>
+                  </MotionPressable>
                 ) : null}
                 {rfq.status === 'PUBLISHED' && hasPermission('rfq.publish') ? (
                   <Pressable
@@ -182,7 +183,7 @@ export default function RFQDetailScreen() {
                 ) : null}
               </View>
 
-              {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
+              {actionError ? <FeedbackBanner text={actionError} tone="error" /> : null}
               {awardedPoId ? (
                 <Link href={'/production' as any} asChild>
                   <Pressable accessibilityRole="button" style={styles.successBanner}>
@@ -283,7 +284,7 @@ export default function RFQDetailScreen() {
                       >
                         <Text style={styles.inviteButtonText}>إرسال الدعوات المحددة</Text>
                       </Pressable>
-                      {inviteMessage ? <Text style={styles.inviteSuccess}>{inviteMessage}</Text> : null}
+                      {inviteMessage ? <FeedbackBanner text={inviteMessage} tone="success" /> : null}
                     </>
                   ) : (
                     <Text style={styles.cardHint}>تظهر أدوات الدعوة بعد نشر الطلب وللمستخدمين الذين يملكون صلاحية الدعوة.</Text>
@@ -327,7 +328,7 @@ export default function RFQDetailScreen() {
               </View>
             </>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

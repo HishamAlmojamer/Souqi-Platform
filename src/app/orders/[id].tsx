@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { FeedbackBanner, MotionPressable, ScreenEntrance } from '@/components/b2b/motion';
 import { StatusPill } from '@/components/b2b/StatusPill';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
@@ -98,7 +99,7 @@ export default function PurchaseOrderDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="orders" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/production' as any} asChild>
               <Pressable accessibilityRole="button" style={styles.backButton}>
@@ -222,22 +223,22 @@ export default function PurchaseOrderDetailScreen() {
                         <TextInput value={milestoneId} onChangeText={setMilestoneId} style={styles.input} placeholder="معرّف المرحلة" placeholderTextColor="#8A948D" textAlign="right" />
                       </Field>
                     </View>
-                    {formError ? <Text style={styles.error}>{formError}</Text> : null}
-                    {formSuccess ? <Text style={styles.success}>{formSuccess}</Text> : null}
-                    <Pressable
+                    {formError ? <FeedbackBanner text={formError} tone="error" /> : null}
+                    {formSuccess ? <FeedbackBanner text={formSuccess} tone="success" /> : null}
+                    <MotionPressable
                       accessibilityRole="button"
                       disabled={registerEvidence.isPending}
                       onPress={() => { void handleEvidence(); }}
                       style={[styles.submit, registerEvidence.isPending && styles.submitDisabled]}
                     >
                       <Text style={styles.submitText}>تسجيل الدليل</Text>
-                    </Pressable>
+                    </MotionPressable>
                   </View>
                 ) : null}
               </View>
             </>
           ) : null}
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

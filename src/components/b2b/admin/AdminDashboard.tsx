@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../AppHeader';
+import { ScreenEntrance } from '../motion';
 import { colors } from '../palette';
 import { containerStyle, useResponsive } from '../responsive';
 import { fonts } from '../typography';
@@ -561,7 +562,7 @@ export function AdminDashboard() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="admin" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>إدارة المنصة</Text>
@@ -1397,7 +1398,7 @@ export function AdminDashboard() {
           ) : null}
 
           <Text style={styles.footer}>سوقي · لوحة الإدارة · جميع التغييرات موثقة في سجل التدقيق</Text>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );

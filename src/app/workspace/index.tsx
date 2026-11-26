@@ -1,9 +1,10 @@
 import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
+import { ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { formatDate, formatNumber, PO_STATUS, RFQ_STATUS, statusInfo } from '@/data/api';
@@ -22,7 +23,7 @@ export default function BuyerWorkspaceScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <AppHeader active="workspace" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <ScreenEntrance style={styles.content}>
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>مساحة العمل <Text style={styles.kickerSlash}>/</Text> نظرة عامة</Text>
@@ -47,10 +48,10 @@ export default function BuyerWorkspaceScreen() {
           <ApiFeedback loading={loading} error={error} onRetry={refetch} />
 
           <View style={styles.statsRow}>
-            <MetricCard label="طلبات التوريد المنشورة" value={formatNumber(metrics.openRfqs).padStart(2, '0')} detail="طلبات مفتوحة" accent="green" />
-            <MetricCard label="العروض الواردة" value={formatNumber(metrics.quoteCount).padStart(2, '0')} detail="للمراجعة والمقارنة" accent="amber" />
-            <MetricCard label="عينات تنتظر قرارًا" value={formatNumber(metrics.samplesPending).padStart(2, '0')} detail="حسب أوامر الشراء" accent="blue" />
-            <MetricCard label="مراحل إنتاج نشطة" value={formatNumber(metrics.activeMilestones).padStart(2, '0')} detail="من لوحة التنفيذ" accent="ink" />
+            <MetricCard label="طلبات التوريد المنشورة" value={formatNumber(metrics.openRfqs).padStart(2, '0')} detail="طلبات مفتوحة" accent="green" delay={40} />
+            <MetricCard label="العروض الواردة" value={formatNumber(metrics.quoteCount).padStart(2, '0')} detail="للمراجعة والمقارنة" accent="amber" delay={85} />
+            <MetricCard label="عينات تنتظر قرارًا" value={formatNumber(metrics.samplesPending).padStart(2, '0')} detail="حسب أوامر الشراء" accent="blue" delay={130} />
+            <MetricCard label="مراحل إنتاج نشطة" value={formatNumber(metrics.activeMilestones).padStart(2, '0')} detail="من لوحة التنفيذ" accent="ink" delay={175} />
           </View>
 
           <View style={[styles.mainGrid, wide && styles.mainGridWide]}>
@@ -63,12 +64,12 @@ export default function BuyerWorkspaceScreen() {
                 <Text style={styles.itemCount}>{formatNumber(rfqs.length)} طلبات</Text>
               </View>
 
-              {rfqs.length > 0 ? rfqs.map((request) => {
+              {rfqs.length > 0 ? rfqs.map((request, index) => {
                 const status = statusInfo(RFQ_STATUS, request.status);
                 const quoteCount = request._count?.quotes ?? 0;
                 return (
+                  <Stagger key={request.id} index={index} baseDelay={120} step={45} translateY={8}>
                   <Link
-                    key={request.id}
                     href={{ pathname: '/rfq/[id]' as any, params: { id: request.id } } as any}
                     asChild
                   >
@@ -100,6 +101,7 @@ export default function BuyerWorkspaceScreen() {
                       </View>
                     </Pressable>
                   </Link>
+                  </Stagger>
                 );
               }) : (
                 <View style={styles.emptyState}>
@@ -208,23 +210,24 @@ export default function BuyerWorkspaceScreen() {
             </View>
           </View>
           <Text style={styles.footer}>سوقي · بيانات الخادم · الحالات لا تمثل التزامات تجارية</Text>
-        </View>
+        </ScreenEntrance>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MetricCard({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink' }) {
+function MetricCard({ label, value, detail, accent, delay = 0 }: { label: string; value: string; detail: string; accent: 'green' | 'amber' | 'blue' | 'ink'; delay?: number }) {
   const accentColor = accent === 'green' ? colors.green : accent === 'amber' ? colors.amber : accent === 'blue' ? colors.blue : colors.inkSoft;
+  const entranceStyle = useEntranceStyle({ delay, duration: 300, translateY: 8 });
   return (
-    <View style={styles.metricCard}>
+    <Animated.View style={[styles.metricCard, entranceStyle]}>
       <View style={styles.metricTop}>
         <Text style={[styles.metricAccent, { backgroundColor: accentColor }]} />
         <Text style={styles.metricLabel}>{label}</Text>
       </View>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricDetail}>{detail}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
