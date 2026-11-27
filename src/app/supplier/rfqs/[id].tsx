@@ -75,8 +75,8 @@ export default function SupplierQuoteScreen() {
       return;
     }
     const validDate = new Date(validUntil);
-    if (Number.isNaN(validDate.getTime())) {
-      setError('تاريخ صلاحية العرض غير صالح.');
+    if (Number.isNaN(validDate.getTime()) || validDate.getTime() <= Date.now()) {
+      setError('اختر تاريخ صلاحية مستقبليًا للعرض.');
       return;
     }
 
@@ -114,7 +114,7 @@ export default function SupplierQuoteScreen() {
         <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/supplier' as any} asChild>
-              <Text style={styles.back}>← عودة للدعوات</Text>
+              <MotionPressable accessibilityRole="link" glow={false}><Text style={styles.back}>← عودة للدعوات</Text></MotionPressable>
             </Link>
             <Text style={styles.kicker}>تقديم عرض تسعير</Text>
           </View>
@@ -160,6 +160,7 @@ export default function SupplierQuoteScreen() {
               <View style={styles.fields}>
                 <Field label="رقم المراجعة">
                   <TextInput
+                    accessibilityLabel="رقم المراجعة"
                     value={revision}
                     onChangeText={setRevision}
                     style={styles.input}
@@ -169,6 +170,7 @@ export default function SupplierQuoteScreen() {
                 </Field>
                 <Field label="مهلة التسليم (يوم)">
                   <TextInput
+                    accessibilityLabel="مهلة التسليم بالأيام"
                     value={leadTimeDays}
                     onChangeText={setLeadTimeDays}
                     style={styles.input}
@@ -178,6 +180,7 @@ export default function SupplierQuoteScreen() {
                 </Field>
                 <Field label="سعر الوحدة (هللات)">
                   <TextInput
+                    accessibilityLabel="سعر الوحدة بالهللات"
                     value={unitPriceCents}
                     onChangeText={setUnitPriceCents}
                     style={styles.input}
@@ -187,6 +190,7 @@ export default function SupplierQuoteScreen() {
                 </Field>
                 <Field label="صلاحية العرض">
                   <TextInput
+                    accessibilityLabel="صلاحية العرض"
                     value={validUntil}
                     onChangeText={setValidUntil}
                     style={styles.input}
@@ -198,6 +202,7 @@ export default function SupplierQuoteScreen() {
               </View>
               <Field label="ملاحظات للمشتري">
                 <TextInput
+                  accessibilityLabel="ملاحظات للمشتري"
                   value={notes}
                   onChangeText={setNotes}
                   style={[styles.input, styles.textArea]}
@@ -216,18 +221,18 @@ export default function SupplierQuoteScreen() {
                 <>
                   <FeedbackBanner text={`تم تسجيل العرض ${submittedQuote.id} بنجاح.`} tone="success" />
                   <Link href={'/supplier' as any} asChild>
-                    <Text style={styles.successLink}>العودة إلى الدعوات ←</Text>
+                    <MotionPressable accessibilityRole="link" glow={false}><Text style={styles.successLink}>العودة إلى الدعوات ←</Text></MotionPressable>
                   </Link>
                 </>
               ) : null}
               <MotionPressable
                 accessibilityRole="button"
-                disabled={submitQuote.isPending || rfq.status !== 'PUBLISHED'}
+                disabled={submitQuote.isPending || Boolean(submittedQuote) || rfq.status !== 'PUBLISHED'}
                 onPress={() => { void handleSubmit(); }}
                 style={[styles.submit, submitQuote.isPending && styles.submitDisabled]}
               >
                 <Text style={styles.submitText}>
-                  {rfq.status === 'PUBLISHED' ? 'إرسال العرض للمشتري' : 'الطلب غير مفتوح لاستقبال العروض'}
+                  {submitQuote.isPending ? 'جارٍ الإرسال…' : submittedQuote ? 'تم إرسال العرض' : rfq.status === 'PUBLISHED' ? 'إرسال العرض للمشتري' : 'الطلب غير مفتوح لاستقبال العروض'}
                 </Text>
               </MotionPressable>
             </View>

@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -69,14 +69,14 @@ export default function OrdersScreen() {
             </View>
             <View style={styles.headerActions}>
               <Link href={'/production' as any} asChild>
-                <Pressable accessibilityRole="link" style={styles.secondaryHeaderButton}>
+                <MotionPressable accessibilityRole="link" style={styles.secondaryHeaderButton}>
                   <Text style={styles.secondaryHeaderButtonText}>أوامر الشراء</Text>
-                </Pressable>
+                </MotionPressable>
               </Link>
               <Link href={'/rfq/new' as any} asChild>
-                <Pressable accessibilityRole="button" style={styles.newButton}>
+                <MotionPressable accessibilityRole="button" style={styles.newButton}>
                   <Text style={styles.newButtonText}>＋ طلب جديد</Text>
-                </Pressable>
+                </MotionPressable>
               </Link>
             </View>
           </View>
@@ -149,7 +149,7 @@ export default function OrdersScreen() {
                 href={{ pathname: '/rfq/[id]' as any, params: { id: request.id } } as any}
                 asChild
               >
-                <Pressable accessibilityRole="link" style={({ pressed }) => [styles.orderRow, pressed && styles.orderRowPressed]}>
+                <MotionPressable accessibilityRole="link" style={styles.orderRow} pressedStyle={styles.orderRowPressed}>
                   <View style={styles.rowArrow}><Text style={styles.rowArrowText}>←</Text></View>
                   <View style={styles.rowContent}>
                     <View style={styles.rowTop}>
@@ -174,7 +174,7 @@ export default function OrdersScreen() {
                       </Text>
                     </View>
                   </View>
-                </Pressable>
+                </MotionPressable>
               </Link>
               </Stagger>
             );
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   noticeText: { flex: 1, color: colors.inkSoft, fontSize: 9, lineHeight: 15, textAlign: 'right', writingDirection: 'rtl' },
   metrics: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, marginTop: 16 },
   metricCard: { flexGrow: 1, flexBasis: 145, minHeight: 92, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, alignItems: 'flex-end', ...shadows.soft },
-  metricMark: { width: 7, height: 7, borderRadius: 4, alignSelf: 'flex-start' },
+  metricMark: { width: 7, height: 7, borderRadius: 4, alignSelf: 'flex-end' },
   metricGreen: { backgroundColor: colors.green },
   metricAmber: { backgroundColor: colors.amber },
   metricBlue: { backgroundColor: colors.blue },

@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -125,9 +125,9 @@ export default function ProductionScreen() {
               <Text style={styles.pageSubtitle}>تابع مراحل أوامر الشراء وحالات العينات من البيانات المسجلة في الخادم.</Text>
             </View>
             <Link href={'/workspace' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+              <MotionPressable accessibilityRole="button" style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>عودة لمساحة المشتري</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -179,9 +179,9 @@ export default function ProductionScreen() {
                         href={{ pathname: '/orders/[id]' as any, params: { id: activeOrder.id } } as any}
                         asChild
                       >
-                        <Pressable accessibilityRole="link" style={styles.detailLink}>
+                        <MotionPressable accessibilityRole="link" style={styles.detailLink}>
                           <Text style={styles.detailLinkText}>تفاصيل الأمر ←</Text>
-                        </Pressable>
+                        </MotionPressable>
                       </Link>
                       <ToneBadge label={orderStatus.label} tone={orderStatus.tone} />
                     </View>
@@ -274,22 +274,22 @@ export default function ProductionScreen() {
                     <View style={styles.actionRow}>
                       {activeMilestone.status === 'PENDING' ? (
                         <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
-                          <Text style={styles.actionButtonText}>بدء المرحلة</Text>
+                          <Text style={styles.actionButtonText}>{working ? 'جارٍ التحديث…' : 'بدء المرحلة'}</Text>
                         </MotionPressable>
                       ) : null}
                       {activeMilestone.status === 'ACTIVE' ? (
                         <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('DONE'); }} style={styles.actionButton}>
-                          <Text style={styles.actionButtonText}>إكمال المرحلة</Text>
+                          <Text style={styles.actionButtonText}>{working ? 'جارٍ التحديث…' : 'إكمال المرحلة'}</Text>
                         </MotionPressable>
                       ) : null}
                       {activeMilestone.status === 'BLOCKED' ? (
                         <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('ACTIVE'); }} style={styles.actionButton}>
-                          <Text style={styles.actionButtonText}>إعادة التشغيل</Text>
+                          <Text style={styles.actionButtonText}>{working ? 'جارٍ التحديث…' : 'إعادة التشغيل'}</Text>
                         </MotionPressable>
                       ) : null}
                       {activeMilestone.status !== 'DONE' ? (
                         <MotionPressable accessibilityRole="button" disabled={working} onPress={() => { void updateMilestone('BLOCKED'); }} style={styles.secondaryActionButton}>
-                          <Text style={styles.secondaryActionText}>توقف</Text>
+                          <Text style={styles.secondaryActionText}>{working ? 'جارٍ التحديث…' : 'توقف'}</Text>
                         </MotionPressable>
                       ) : null}
                     </View>
@@ -338,7 +338,7 @@ export default function ProductionScreen() {
                           onPress={() => { void updateSample(action.status); }}
                           style={styles.sampleActionButton}
                         >
-                          <Text style={styles.sampleActionText}>{action.label}</Text>
+                          <Text style={styles.sampleActionText}>{working ? 'جارٍ التحديث…' : action.label}</Text>
                         </MotionPressable>
                       ))}
                     </View>
@@ -376,9 +376,9 @@ export default function ProductionScreen() {
               <Text style={styles.emptyTitle}>لا توجد أوامر شراء بعد</Text>
               <Text style={styles.emptyBody}>تظهر هنا أوامر الشراء بعد ترسية العروض واعتماد الطلبات.</Text>
               <Link href={'/orders' as any} asChild>
-                <Pressable accessibilityRole="button" style={styles.emptyButton}>
+                <MotionPressable accessibilityRole="button" style={styles.emptyButton}>
                   <Text style={styles.emptyButtonText}>فتح مركز الطلبات</Text>
-                </Pressable>
+                </MotionPressable>
               </Link>
             </View>
           )}
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   orderTitle: { color: colors.ink, fontSize: 16, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   orderMeta: { color: colors.muted, fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
   orderPercent: { color: colors.greenDark, fontSize: 18, fontWeight: '900' },
-  progressTrack: { height: 8, borderRadius: 6, backgroundColor: '#E7E9E2', marginTop: 14, overflow: 'hidden' },
+  progressTrack: { height: 8, borderRadius: 6, backgroundColor: '#E7E9E2', marginTop: 14, overflow: 'hidden', flexDirection: 'row-reverse' },
   progressFill: { height: '100%', borderRadius: 6, backgroundColor: colors.green },
   orderFacts: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, marginTop: 16 },
   factBlock: { flex: 1, minWidth: 90, alignItems: 'flex-end' },

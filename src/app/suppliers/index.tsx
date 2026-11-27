@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -89,9 +89,9 @@ export default function SuppliersDashboardScreen() {
               <Text style={styles.pageSubtitle}>الموردون المعتمدون المسجلون في قاعدة البيانات، مع قدراتهم ومراحل استجابتهم.</Text>
             </View>
             <Link href={'/workspace' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.returnButton}>
+              <MotionPressable accessibilityRole="button" style={styles.returnButton}>
                 <Text style={styles.returnButtonText}>← العودة</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -105,9 +105,9 @@ export default function SuppliersDashboardScreen() {
           <ApiFeedback
             loading={suppliersQuery.isLoading}
             error={suppliersQuery.error}
-            empty={!suppliersQuery.isLoading && suppliers.length === 0}
-            emptyTitle="لا يوجد موردون معتمدون بعد"
-            emptyBody="سيظهر الموردون هنا بعد اعتماد ملفاتهم من لوحة الإدارة."
+            empty={!suppliersQuery.isLoading && visibleSuppliers.length === 0}
+            emptyTitle={suppliers.length === 0 ? 'لا يوجد موردون معتمدون بعد' : 'لا توجد نتائج مطابقة'}
+            emptyBody={suppliers.length === 0 ? 'سيظهر الموردون هنا بعد اعتماد ملفاتهم من لوحة الإدارة.' : 'جرّب تعديل كلمة البحث أو الفلاتر.'}
             onRetry={() => { void suppliersQuery.refetch(); }}
           />
 
@@ -216,9 +216,9 @@ export default function SuppliersDashboardScreen() {
                       <View style={styles.cardFooter}>
                         <Text style={styles.footerLabel}>{supplier.status === 'ACTIVE' ? 'نشط' : supplier.status}</Text>
                         <Link href={'/rfq/new' as any} asChild>
-                          <Pressable accessibilityRole="button" style={styles.primaryButton}>
+                          <MotionPressable accessibilityRole="button" style={styles.primaryButton}>
                             <Text style={styles.primaryButtonText}>طلب عرض جديد</Text>
-                          </Pressable>
+                          </MotionPressable>
                         </Link>
                       </View>
                     </View>
@@ -288,10 +288,10 @@ function MetricMini({ label, value }: { label: string; value: string }) {
 function ActionRow({ href, label, description }: { href: string; label: string; description: string }) {
   return (
     <Link href={href as any} asChild>
-      <Pressable accessibilityRole="link" style={styles.actionRow}>
+      <MotionPressable accessibilityRole="link" style={styles.actionRow}>
         <Text style={styles.actionLabel}>{label}</Text>
         <Text style={styles.actionDescription}>{description}</Text>
-      </Pressable>
+      </MotionPressable>
     </Link>
   );
 }

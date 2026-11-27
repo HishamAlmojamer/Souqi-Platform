@@ -151,6 +151,7 @@ function HeaderLink({ href, label, active, badge = 0, onPress }: { href: string;
   return (
     <MotionPressable
       accessibilityRole="link"
+      accessibilityLabel={badge > 0 ? `${label}، ${badge} إشعارات غير مقروءة` : label}
       accessibilityState={{ selected: active }}
       onPress={() => {
         onPress?.();
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
   navBadge: {
     position: 'absolute',
     top: 2,
-    left: 2,
+    right: 2,
     minWidth: 16,
     height: 16,
     borderRadius: 8,

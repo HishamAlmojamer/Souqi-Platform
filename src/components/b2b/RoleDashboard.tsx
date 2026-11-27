@@ -1,11 +1,11 @@
 import { Link } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from './ApiFeedback';
 import { AppHeader } from './AppHeader';
-import { MotionPressable, ScreenEntrance, useEntranceStyle } from './motion';
+import { LoadingDots, MotionPressable, ScreenEntrance, useEntranceStyle } from './motion';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
 import { containerStyle, useResponsive } from './responsive';
 import { StatusPill } from './StatusPill';
@@ -42,6 +42,16 @@ export function RoleDashboard() {
     logout,
   } = useAuth();
   const { rfqs, metrics, activity, loading, error, refetch } = usePlatformOverview();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const copy = dashboardCopy(role, account?.accountType);
   const accountType = account?.accountType;
@@ -92,10 +102,11 @@ export function RoleDashboard() {
             </View>
             <MotionPressable
               accessibilityRole="button"
-              onPress={() => void logout()}
+              disabled={loggingOut}
+              onPress={() => { void handleLogout(); }}
               style={styles.logoutButton}
             >
-              <Text style={styles.logoutText}>تسجيل الخروج</Text>
+              {loggingOut ? <LoadingDots color={colors.goldLight} label="جارٍ الخروج…" /> : <Text style={styles.logoutText}>تسجيل الخروج</Text>}
             </MotionPressable>
           </View>
 

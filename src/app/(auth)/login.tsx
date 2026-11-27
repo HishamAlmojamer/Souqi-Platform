@@ -101,7 +101,7 @@ export default function LoginScreen() {
         </View>
         <Text style={authStyles.switchText}>
           أنشئ مساحة شركتك عبر{' '}
-          <Link href={withNext('/register', params.next) as any} style={authStyles.switchLink}>إنشاء حساب جديد</Link>
+          <Link href={withNext('/register', params.next) as any} asChild><MotionPressable accessibilityRole="link" glow={false}><Text style={authStyles.switchLink}>إنشاء حساب جديد</Text></MotionPressable></Link>
         </Text>
       </View>
     </AuthLayout>

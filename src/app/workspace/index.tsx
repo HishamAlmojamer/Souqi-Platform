@@ -1,10 +1,10 @@
 import { Link } from 'expo-router';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
-import { ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
+import { MotionPressable, ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { formatDate, formatNumber, PO_STATUS, RFQ_STATUS, statusInfo } from '@/data/api';
@@ -31,10 +31,10 @@ export default function BuyerWorkspaceScreen() {
               <Text style={styles.pageDescription}>هذه صورة سريعة عن طلبات التوريد والعينات قيد المتابعة.</Text>
             </View>
             <Link href={'/rfq/new' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.newButton}>
+              <MotionPressable accessibilityRole="button" style={styles.newButton}>
                 <Text style={styles.newButtonPlus}>＋</Text>
                 <Text style={styles.newButtonText}>طلب عروض جديد</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -73,7 +73,7 @@ export default function BuyerWorkspaceScreen() {
                     href={{ pathname: '/rfq/[id]' as any, params: { id: request.id } } as any}
                     asChild
                   >
-                    <Pressable accessibilityRole="link" style={styles.requestCard}>
+                    <MotionPressable accessibilityRole="link" style={styles.requestCard}>
                       <View style={styles.requestTop}>
                         <View style={styles.requestText}>
                           <Text style={styles.requestTitle}>{request.title}</Text>
@@ -99,7 +99,7 @@ export default function BuyerWorkspaceScreen() {
                         </View>
                         <Text style={styles.requestArrow}>←</Text>
                       </View>
-                    </Pressable>
+                    </MotionPressable>
                   </Link>
                   </Stagger>
                 );
@@ -109,15 +109,15 @@ export default function BuyerWorkspaceScreen() {
                   <Text style={styles.emptyTitle}>لا توجد طلبات بعد</Text>
                   <Text style={styles.emptyBody}>أنشئ طلب عروض لتبدأ تنظيم مواصفات احتياجك.</Text>
                   <Link href={'/rfq/new' as any} asChild>
-                    <Pressable accessibilityRole="button" style={styles.emptyButton}><Text style={styles.emptyButtonText}>إنشاء أول طلب</Text></Pressable>
+                    <MotionPressable accessibilityRole="button" style={styles.emptyButton}><Text style={styles.emptyButtonText}>إنشاء أول طلب</Text></MotionPressable>
                   </Link>
                 </View>
               )}
 
               <Link href={'/rfq/new' as any} asChild>
-                <Pressable accessibilityRole="button" style={styles.addAnother}>
+                <MotionPressable accessibilityRole="button" style={styles.addAnother}>
                   <Text style={styles.addAnotherText}>＋ أضف طلب توريد آخر</Text>
-                </Pressable>
+                </MotionPressable>
               </Link>
             </View>
 
@@ -149,9 +149,9 @@ export default function BuyerWorkspaceScreen() {
                       )) : <Text style={styles.emptyDetail}>لا توجد مراحل مسجلة على هذا الطلب بعد.</Text>}
                     </View>
                     <Link href={'/production' as any} asChild>
-                      <Pressable accessibilityRole="button" style={styles.panelLink}>
+                      <MotionPressable accessibilityRole="button" style={styles.panelLink}>
                         <Text style={styles.panelLinkText}>فتح لوحة التنفيذ</Text>
-                      </Pressable>
+                      </MotionPressable>
                     </Link>
                   </>
                 ) : (
@@ -191,19 +191,19 @@ export default function BuyerWorkspaceScreen() {
                   <Text style={styles.helpTitle}>روابط مساعدة</Text>
                   <Text style={styles.helpText}> انتقل إلى سجل الطلبات أو لوحة التنفيذ أو دليل الموردين المرتبط بالخادم.</Text>
                   <Link href={'/orders' as any} asChild>
-                    <Pressable accessibilityRole="button" style={styles.suppliersLink}>
+                    <MotionPressable accessibilityRole="button" style={styles.suppliersLink}>
                       <Text style={styles.suppliersLinkText}>مركز متابعة الطلبات</Text>
-                    </Pressable>
+                    </MotionPressable>
                   </Link>
                   <Link href={'/production' as any} asChild>
-                    <Pressable accessibilityRole="button" style={styles.suppliersLink}>
+                    <MotionPressable accessibilityRole="button" style={styles.suppliersLink}>
                       <Text style={styles.suppliersLinkText}>لوحة التنفيذ</Text>
-                    </Pressable>
+                    </MotionPressable>
                   </Link>
                   <Link href={'/suppliers' as any} asChild>
-                    <Pressable accessibilityRole="button" style={styles.suppliersLink}>
+                    <MotionPressable accessibilityRole="button" style={styles.suppliersLink}>
                       <Text style={styles.suppliersLinkText}>دليل الموردين</Text>
-                    </Pressable>
+                    </MotionPressable>
                   </Link>
                 </View>
               </View>
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   quoteProgressCopy: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 7, marginBottom: 6 },
   quoteProgressLabel: { color: colors.muted, fontSize: 8, writingDirection: 'rtl' },
   quoteProgressCount: { color: colors.green, fontSize: 9, fontWeight: '800', writingDirection: 'rtl' },
-  progressTrack: { height: 4, borderRadius: 2, backgroundColor: '#E8ECE6', overflow: 'hidden' },
+  progressTrack: { height: 4, borderRadius: 2, backgroundColor: '#E8ECE6', overflow: 'hidden', flexDirection: 'row-reverse' },
   progressFill: { height: 4, borderRadius: 2, backgroundColor: colors.green },
   requestArrow: { color: colors.amber, fontSize: 15, fontWeight: '800' },
   addAnother: { minHeight: 40, borderWidth: 1, borderColor: '#D2D9D0', borderStyle: 'dashed', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginTop: 2 },

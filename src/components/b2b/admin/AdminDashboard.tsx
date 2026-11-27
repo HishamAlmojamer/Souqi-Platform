@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../AppHeader';
-import { AmbientGlow, MotionPressable, ScreenEntrance } from '../motion';
+import { AmbientGlow, FeedbackBanner, MotionPressable, ScreenEntrance } from '../motion';
 import { colors, withAlpha } from '../palette';
 import { containerStyle, useResponsive } from '../responsive';
 import { fonts } from '../typography';
@@ -586,11 +586,11 @@ export function AdminDashboard() {
             </View>
           </View>
 
-          <View style={styles.tabs}>
+          <View style={styles.tabs} accessibilityRole="tablist">
             {TABS.map((item) => (
               <MotionPressable
                 key={item.key}
-                accessibilityRole="button"
+                accessibilityRole="tab"
                 accessibilityState={{ selected: tab === item.key }}
                 onPress={() => setTab(item.key)}
                 style={[styles.tab, tab === item.key && styles.tabActive]}
@@ -602,16 +602,9 @@ export function AdminDashboard() {
             ))}
           </View>
 
-          {loading ? <Text style={styles.loadingText}>جارٍ تحميل بيانات المنصة…</Text> : null}
-          {loadError ? <Text accessibilityRole="alert" style={styles.errorText}>{errorMessage(loadError)}</Text> : null}
-          {feedback ? (
-            <Text
-              accessibilityRole={feedback.tone === 'error' ? 'alert' : undefined}
-              style={feedback.tone === 'error' ? styles.errorText : styles.noticeText}
-            >
-              {feedback.text}
-            </Text>
-          ) : null}
+          {loading ? <FeedbackBanner text="جارٍ تحميل بيانات المنصة…" tone="info" /> : null}
+          {loadError ? <FeedbackBanner text={errorMessage(loadError)} tone="error" /> : null}
+          {feedback ? <FeedbackBanner text={feedback.text} tone={feedback.tone} /> : null}
 
           {tab === 'overview' ? (
             <View>

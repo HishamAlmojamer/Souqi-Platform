@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -32,6 +32,7 @@ export default function NotificationsScreen() {
   const { gutter } = useResponsive();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [actionError, setActionError] = useState('');
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const notificationsQuery = useApiQuery<NotificationsPayload>('/api/notifications?pageSize=100');
   const markRead = useApiMutation<{ notification: ApiNotification }>();
   const markAll = useApiMutation<{ ok: boolean }>();
@@ -50,6 +51,7 @@ export default function NotificationsScreen() {
 
   const handleMarkOne = async (notificationId: string) => {
     setActionError('');
+    setPendingId(notificationId);
     try {
       await markRead.mutateAsync({
         path: `/api/notifications/${notificationId}`,
@@ -57,6 +59,8 @@ export default function NotificationsScreen() {
       });
     } catch (cause) {
       setActionError(errorMessage(cause));
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -77,7 +81,7 @@ export default function NotificationsScreen() {
               onPress={() => { void handleMarkAll(); }}
               style={[styles.markAll, unreadCount === 0 && styles.markAllDisabled]}
             >
-              <Text style={styles.markAllText}>تحديد الكل كمقروء</Text>
+              <Text style={styles.markAllText}>{markAll.isPending ? 'جارٍ التحديث…' : 'تحديد الكل كمقروء'}</Text>
             </MotionPressable>
           </View>
 
@@ -142,20 +146,20 @@ export default function NotificationsScreen() {
                   {!notification.read ? (
                     <MotionPressable
                       accessibilityRole="button"
-                      disabled={markRead.isPending}
+                      disabled={pendingId === notification.id}
                       onPress={() => { void handleMarkOne(notification.id); }}
                       style={styles.readButton}
                     >
-                      <Text style={styles.readButtonText}>تحديد كمقروء</Text>
+                      <Text style={styles.readButtonText}>{pendingId === notification.id ? 'جارٍ التحديث…' : 'تحديد كمقروء'}</Text>
                     </MotionPressable>
                   ) : (
                     <Text style={styles.readLabel}>مقروء</Text>
                   )}
                   {notification.href ? (
                     <Link href={notification.href as any} asChild>
-                      <Pressable accessibilityRole="link" style={styles.openButton}>
+                      <MotionPressable accessibilityRole="link" style={styles.openButton}>
                         <Text style={styles.openButtonText}>فتح ←</Text>
-                      </Pressable>
+                      </MotionPressable>
                     </Link>
                   ) : null}
                 </View>

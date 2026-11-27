@@ -1,6 +1,6 @@
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -120,9 +120,9 @@ export default function RFQDetailScreen() {
         <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/workspace' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+              <MotionPressable accessibilityRole="button" style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>← عودة</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
             <View style={styles.headerMeta}>
               <Text style={styles.kicker}>تفاصيل طلب التوريد</Text>
@@ -152,9 +152,9 @@ export default function RFQDetailScreen() {
                     href={{ pathname: '/rfq/[id]/edit' as any, params: { id: rfq.id } } as any}
                     asChild
                   >
-                    <Pressable accessibilityRole="button" style={styles.editButton}>
+                    <MotionPressable accessibilityRole="button" style={styles.editButton}>
                       <Text style={styles.editButtonText}>تعديل المسودة</Text>
-                    </Pressable>
+                    </MotionPressable>
                   </Link>
                 ) : null}
                 <View style={styles.quickFacts}>
@@ -166,29 +166,31 @@ export default function RFQDetailScreen() {
                 {rfq.status === 'DRAFT' && hasPermission('rfq.publish') ? (
                   <MotionPressable
                     accessibilityRole="button"
+                    disabled={changeStatus.isPending}
                     style={styles.actionButton}
                     onPress={() => { void runAction(`/api/rfqs/${rfq.id}/status`, { status: 'PUBLISHED' }); }}
                   >
-                    <Text style={styles.actionButtonText}>نشر الطلب للموردين</Text>
+                    <Text style={styles.actionButtonText}>{changeStatus.isPending ? 'جارٍ النشر…' : 'نشر الطلب للموردين'}</Text>
                   </MotionPressable>
                 ) : null}
                 {rfq.status === 'PUBLISHED' && hasPermission('rfq.publish') ? (
-                  <Pressable
+                  <MotionPressable
                     accessibilityRole="button"
+                    disabled={changeStatus.isPending}
                     style={styles.secondaryAction}
                     onPress={() => { void runAction(`/api/rfqs/${rfq.id}/status`, { status: 'CLOSED' }); }}
                   >
-                    <Text style={styles.secondaryActionText}>إغلاق الطلب</Text>
-                  </Pressable>
+                    <Text style={styles.secondaryActionText}>{changeStatus.isPending ? 'جارٍ الإغلاق…' : 'إغلاق الطلب'}</Text>
+                  </MotionPressable>
                 ) : null}
               </View>
 
               {actionError ? <FeedbackBanner text={actionError} tone="error" /> : null}
               {awardedPoId ? (
                 <Link href={'/production' as any} asChild>
-                  <Pressable accessibilityRole="button" style={styles.successBanner}>
+                  <MotionPressable accessibilityRole="button" style={styles.successBanner}>
                     <Text style={styles.successBannerText}>تم إنشاء أمر التوريد {awardedPoId} · افتح لوحة التنفيذ</Text>
-                  </Pressable>
+                  </MotionPressable>
                 </Link>
               ) : null}
 
@@ -229,14 +231,14 @@ export default function RFQDetailScreen() {
                               <Text style={styles.offerBadgeText}>{offer.status}</Text>
                             </View>
                             {rfq.status === 'PUBLISHED' && hasPermission('rfq.award') && offer.status === 'SUBMITTED' ? (
-                              <Pressable
+                              <MotionPressable
                                 accessibilityRole="button"
                                 disabled={award.isPending}
                                 onPress={() => { void awardQuote(offer.id); }}
                                 style={styles.awardButton}
                               >
-                                <Text style={styles.awardButtonText}>ترسية العرض</Text>
-                              </Pressable>
+                                <Text style={styles.awardButtonText}>{award.isPending ? 'جارٍ الترسية…' : 'ترسية العرض'}</Text>
+                              </MotionPressable>
                             ) : null}
                           </View>
                         </View>
@@ -257,7 +259,7 @@ export default function RFQDetailScreen() {
                           const invited = invitations.some((item) => item.supplierOrgId === supplier.id);
                           const selected = selectedSuppliers.includes(supplier.id);
                           return (
-                            <Pressable
+                            <MotionPressable
                               key={supplier.id}
                               accessibilityRole="button"
                               accessibilityState={{ selected }}
@@ -271,19 +273,19 @@ export default function RFQDetailScreen() {
                               <Text style={styles.supplierOptionMeta}>
                                 {invited ? 'مدعو بالفعل' : selected ? 'محدد للإرسال' : supplier.countryCode}
                               </Text>
-                            </Pressable>
+                            </MotionPressable>
                           );
                         })}
                         {suppliers.length === 0 ? <Text style={styles.emptyDetail}>لا يوجد موردون متاحون للدعوة.</Text> : null}
                       </View>
-                      <Pressable
+                      <MotionPressable
                         accessibilityRole="button"
                         disabled={invite.isPending || selectedSuppliers.length === 0}
                         onPress={() => { void sendInvitations(); }}
                         style={[styles.inviteButton, invite.isPending && styles.inviteButtonDisabled]}
                       >
-                        <Text style={styles.inviteButtonText}>إرسال الدعوات المحددة</Text>
-                      </Pressable>
+                        <Text style={styles.inviteButtonText}>{invite.isPending ? 'جارٍ الإرسال…' : 'إرسال الدعوات المحددة'}</Text>
+                      </MotionPressable>
                       {inviteMessage ? <FeedbackBanner text={inviteMessage} tone="success" /> : null}
                     </>
                   ) : (
@@ -419,7 +421,7 @@ const styles = StyleSheet.create({
   offerHeaderText: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
   offerSupplier: { color: colors.ink, fontSize: 12, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
   offerMeta: { color: colors.muted, fontSize: 9, marginTop: 5, textAlign: 'right', writingDirection: 'rtl' },
-  offerTotal: { color: colors.greenDark, fontSize: 14, fontWeight: '900', textAlign: 'left' },
+  offerTotal: { color: colors.greenDark, fontSize: 14, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
   offerNotes: { color: colors.muted, fontSize: 10, marginTop: 10, textAlign: 'right', writingDirection: 'rtl' },
   offerFooter: { marginTop: 12, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   offerBadge: { minHeight: 26, paddingHorizontal: 8, borderRadius: 6, backgroundColor: '#EAEFEA', justifyContent: 'center' },

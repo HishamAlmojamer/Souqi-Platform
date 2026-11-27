@@ -1,11 +1,11 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
-import { FeedbackBanner, ScreenEntrance } from '@/components/b2b/motion';
+import { FeedbackBanner, MotionPressable, ScreenEntrance } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -135,9 +135,9 @@ export default function EditDraftRfqScreen() {
               <Text style={styles.subtitle}>تُحفظ التعديلات على المسودة فقط، ثم تعود إلى التفاصيل لنشر الطلب.</Text>
             </View>
             <Link href={rfq ? ({ pathname: '/rfq/[id]' as any, params: { id: rfq.id } } as any) : '/workspace' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+              <MotionPressable accessibilityRole="button" style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>← إلغاء التعديل</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -173,34 +173,34 @@ export default function EditDraftRfqScreen() {
 
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>عنوان الطلب</Text>
-                <TextInput value={title} onChangeText={setTitle} style={styles.input} textAlign="right" />
+                <TextInput accessibilityLabel="عنوان الطلب" value={title} onChangeText={setTitle} style={styles.input} textAlign="right" />
               </View>
 
               <View style={styles.fieldRow}>
                 <View style={styles.field}>
                   <Text style={styles.fieldLabel}>الكمية</Text>
-                  <TextInput value={quantity} onChangeText={setQuantity} style={styles.input} keyboardType="numeric" textAlign="right" />
+                  <TextInput accessibilityLabel="الكمية" value={quantity} onChangeText={setQuantity} style={styles.input} keyboardType="numeric" textAlign="right" />
                 </View>
                 <View style={styles.field}>
                   <Text style={styles.fieldLabel}>الوحدة</Text>
-                  <TextInput value={unit} onChangeText={setUnit} style={styles.input} textAlign="right" />
+                  <TextInput accessibilityLabel="الوحدة" value={unit} onChangeText={setUnit} style={styles.input} textAlign="right" />
                 </View>
               </View>
 
               <View style={styles.fieldRow}>
                 <View style={styles.field}>
                   <Text style={styles.fieldLabel}>العملة</Text>
-                  <TextInput value={currency} onChangeText={setCurrency} style={styles.input} maxLength={3} autoCapitalize="characters" textAlign="right" />
+                  <TextInput accessibilityLabel="العملة" value={currency} onChangeText={setCurrency} style={styles.input} maxLength={3} autoCapitalize="characters" textAlign="right" />
                 </View>
                 <View style={styles.field}>
                   <Text style={styles.fieldLabel}>الموعد المستهدف</Text>
-                  <TextInput value={targetDate} onChangeText={setTargetDate} style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#8A948D" textAlign="right" />
+                  <TextInput accessibilityLabel="الموعد المستهدف" value={targetDate} onChangeText={setTargetDate} style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#8A948D" textAlign="right" />
                 </View>
               </View>
 
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>جهة التسليم</Text>
-                <TextInput value={destination} onChangeText={setDestination} style={styles.input} textAlign="right" />
+                <TextInput accessibilityLabel="جهة التسليم" value={destination} onChangeText={setDestination} style={styles.input} textAlign="right" />
               </View>
 
               {fields.length > 0 ? (
@@ -215,7 +215,7 @@ export default function EditDraftRfqScreen() {
                       {field.type === 'choice' ? (
                         <View style={styles.choiceList}>
                           {(field.options ?? []).map((option) => (
-                            <Pressable
+                            <MotionPressable
                               key={option}
                               accessibilityRole="button"
                               onPress={() => { setFormValues((current) => ({ ...current, [field.id]: option })); setError(''); }}
@@ -224,11 +224,12 @@ export default function EditDraftRfqScreen() {
                               <Text style={[styles.choiceText, (formValues[field.id] ?? '') === option && styles.choiceTextSelected]}>
                                 {option}
                               </Text>
-                            </Pressable>
+                            </MotionPressable>
                           ))}
                         </View>
                       ) : (
                         <TextInput
+                          accessibilityLabel={field.label}
                           value={formValues[field.id] ?? ''}
                           onChangeText={(value) => { setFormValues((current) => ({ ...current, [field.id]: value })); setError(''); }}
                           style={styles.input}
@@ -245,14 +246,14 @@ export default function EditDraftRfqScreen() {
               {error ? <FeedbackBanner text={error} tone="error" /> : null}
 
               <View style={styles.actions}>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={updateRfq.isPending}
                   onPress={() => { void handleSubmit(); }}
                   style={[styles.primaryButton, updateRfq.isPending && styles.buttonDisabled]}
                 >
-                  <Text style={styles.primaryButtonText}>حفظ التعديلات</Text>
-                </Pressable>
+                  <Text style={styles.primaryButtonText}>{updateRfq.isPending ? 'جارٍ الحفظ…' : 'حفظ التعديلات'}</Text>
+                </MotionPressable>
               </View>
             </View>
           ) : null}

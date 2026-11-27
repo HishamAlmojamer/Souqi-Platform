@@ -1,6 +1,6 @@
 import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -159,9 +159,9 @@ export default function NewRFQScreen() {
               <Text style={styles.pageTitle}>مصمّم طلبات التسعير حسب القطاع</Text>
             </View>
             <Link href={'/workspace' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+              <MotionPressable accessibilityRole="button" style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>← رجوع إلى المساحة</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -199,6 +199,7 @@ export default function NewRFQScreen() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>عنوان الطلب</Text>
                 <TextInput
+                  accessibilityLabel="عنوان الطلب"
                   value={title}
                   onChangeText={setTitle}
                   style={styles.input}
@@ -212,6 +213,7 @@ export default function NewRFQScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>الكمية المطلوبة</Text>
                   <TextInput
+                    accessibilityLabel="الكمية المطلوبة"
                     value={quantity}
                     onChangeText={setQuantity}
                     style={styles.input}
@@ -224,6 +226,7 @@ export default function NewRFQScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>الوحدة</Text>
                   <TextInput
+                    accessibilityLabel="الوحدة"
                     value={unit}
                     onChangeText={setUnit}
                     style={styles.input}
@@ -238,6 +241,7 @@ export default function NewRFQScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>العملة</Text>
                   <TextInput
+                    accessibilityLabel="العملة"
                     value={currency}
                     onChangeText={setCurrency}
                     style={styles.input}
@@ -251,6 +255,7 @@ export default function NewRFQScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>الموعد المستهدف (اختياري)</Text>
                   <TextInput
+                    accessibilityLabel="الموعد المستهدف"
                     value={targetDate}
                     onChangeText={setTargetDate}
                     style={styles.input}
@@ -264,6 +269,7 @@ export default function NewRFQScreen() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>جهة التسليم</Text>
                 <TextInput
+                  accessibilityLabel="جهة التسليم"
                   value={destination}
                   onChangeText={setDestination}
                   style={styles.input}
@@ -310,6 +316,7 @@ export default function NewRFQScreen() {
                     </View>
                   ) : (
                     <TextInput
+                      accessibilityLabel={field.label}
                       value={formValues[field.id] ?? ''}
                       onChangeText={(value) => updateField(field.id, value)}
                       style={styles.input}
@@ -332,7 +339,7 @@ export default function NewRFQScreen() {
                   onPress={() => { void handleSubmit(true); }}
                   style={[styles.primaryButton, (createRfq.isPending || publishRfq.isPending) && styles.buttonDisabled]}
                 >
-                  <Text style={styles.primaryButtonText}>حفظ ونشر الطلب</Text>
+                  <Text style={styles.primaryButtonText}>{(createRfq.isPending || publishRfq.isPending) ? 'جارٍ الحفظ والنشر…' : 'حفظ ونشر الطلب'}</Text>
                 </MotionPressable>
                 <MotionPressable
                   accessibilityRole="button"
@@ -340,12 +347,12 @@ export default function NewRFQScreen() {
                   onPress={() => { void handleSubmit(false); }}
                   style={styles.ghostButton}
                 >
-                  <Text style={styles.ghostButtonText}>حفظ كمسودة</Text>
+                  <Text style={styles.ghostButtonText}>{createRfq.isPending ? 'جارٍ الحفظ…' : 'حفظ كمسودة'}</Text>
                 </MotionPressable>
                 <Link href={'/workspace' as any} asChild>
-                  <Pressable accessibilityRole="button" style={styles.ghostButton}>
+                  <MotionPressable accessibilityRole="button" style={styles.ghostButton}>
                     <Text style={styles.ghostButtonText}>إلغاء</Text>
-                  </Pressable>
+                  </MotionPressable>
                 </Link>
               </View>
             </View>

@@ -158,7 +158,7 @@ export default function RegisterScreen() {
           <View style={styles.feedbackBox}>
             <Text accessibilityRole="alert" style={authStyles.feedback}>{error}</Text>
             {duplicateEmail ? (
-              <Link href={withNext('/login', params.next) as any} accessibilityRole="link" style={[authStyles.switchLink, styles.feedbackLink]}>سجّل الدخول بدلاً من ذلك</Link>
+              <Link href={withNext('/login', params.next) as any} asChild><MotionPressable accessibilityRole="link" glow={false}><Text style={[authStyles.switchLink, styles.feedbackLink]}>سجّل الدخول بدلاً من ذلك</Text></MotionPressable></Link>
             ) : null}
           </View>
         ) : null}
@@ -166,7 +166,7 @@ export default function RegisterScreen() {
 
         <Text style={authStyles.switchText}>
           لديك حساب بالفعل؟{' '}
-          <Link href={withNext('/login', params.next) as any} style={authStyles.switchLink}>تسجيل الدخول</Link>
+          <Link href={withNext('/login', params.next) as any} asChild><MotionPressable accessibilityRole="link" glow={false}><Text style={authStyles.switchLink}>تسجيل الدخول</Text></MotionPressable></Link>
         </Text>
       </View>
     </AuthLayout>

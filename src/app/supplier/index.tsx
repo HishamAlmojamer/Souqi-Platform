@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
 import { AppHeader } from '@/components/b2b/AppHeader';
-import { ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
+import { MotionPressable, ScreenEntrance, Stagger, useEntranceStyle } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import {
@@ -44,7 +44,9 @@ export default function SupplierGatewayScreen() {
               <Text style={styles.subtitle}>تابع الدعوات الواردة وقدّم عروضك على طلبات التوريد المنشورة.</Text>
             </View>
             <Link href={'/suppliers' as any} asChild>
-              <Text style={styles.link}>← استعراض السوق</Text>
+              <MotionPressable accessibilityRole="link" style={styles.linkHit} glow={false}>
+                <Text style={styles.link}>← استعراض السوق</Text>
+              </MotionPressable>
             </Link>
           </View>
 
@@ -91,9 +93,11 @@ export default function SupplierGatewayScreen() {
                     href={{ pathname: '/supplier/rfqs/[id]' as any, params: { id: invitation.rfqId } } as any}
                     asChild
                   >
-                    <Text style={styles.action}>
-                      {invitation.status === 'PENDING' ? 'مراجعة وتقديم عرض ←' : 'عرض التفاصيل ←'}
-                    </Text>
+                    <MotionPressable accessibilityRole="link" style={styles.actionHit} glow={false}>
+                      <Text style={styles.action}>
+                        {invitation.status === 'PENDING' ? 'مراجعة وتقديم عرض ←' : 'عرض التفاصيل ←'}
+                      </Text>
+                    </MotionPressable>
                   </Link>
                 </View>
                 </Stagger>
@@ -135,6 +139,7 @@ const styles = StyleSheet.create({
   title: { color: colors.ink, fontSize: 26, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl', marginTop: 8 },
   subtitle: { color: colors.muted, fontSize: 11, textAlign: 'right', writingDirection: 'rtl', marginTop: 6 },
   link: { color: colors.greenDark, fontSize: 11, fontWeight: '800', writingDirection: 'rtl' },
+  linkHit: { minHeight: 44, justifyContent: 'center' },
   stats: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, marginTop: 18 },
   metric: { flexGrow: 1, flexBasis: 140, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14 },
   metricLabel: { color: colors.muted, fontSize: 10, textAlign: 'right', writingDirection: 'rtl' },
@@ -157,4 +162,5 @@ const styles = StyleSheet.create({
   factLabel: { color: colors.muted, fontSize: 8, textAlign: 'right', writingDirection: 'rtl' },
   factValue: { color: colors.ink, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl', marginTop: 5 },
   action: { color: colors.greenDark, fontSize: 11, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl', marginTop: 16 },
+  actionHit: { minHeight: 44, justifyContent: 'center' },
 });

@@ -1,6 +1,6 @@
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from '@/components/b2b/ApiFeedback';
@@ -102,9 +102,9 @@ export default function PurchaseOrderDetailScreen() {
         <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
             <Link href={'/production' as any} asChild>
-              <Pressable accessibilityRole="button" style={styles.backButton}>
+              <MotionPressable accessibilityRole="button" style={styles.backButton}>
                 <Text style={styles.backButtonText}>← عودة للتنفيذ</Text>
-              </Pressable>
+              </MotionPressable>
             </Link>
             <View style={styles.headerMeta}>
               <Text style={styles.kicker}>تفاصيل أمر التوريد</Text>
@@ -205,22 +205,22 @@ export default function PurchaseOrderDetailScreen() {
                     <Text style={styles.formTitle}>تسجيل دليل جديد</Text>
                     <View style={styles.formGrid}>
                       <Field label="مفتاح الملف">
-                        <TextInput value={objectKey} onChangeText={setObjectKey} style={styles.input} placeholder="quality/report-01.pdf" placeholderTextColor="#8A948D" textAlign="right" />
+                        <TextInput accessibilityLabel="مفتاح الملف" value={objectKey} onChangeText={setObjectKey} style={styles.input} placeholder="quality/report-01.pdf" placeholderTextColor="#8A948D" textAlign="right" />
                       </Field>
                       <Field label="التصنيف">
-                        <TextInput value={classification} onChangeText={setClassification} style={styles.input} textAlign="right" />
+                        <TextInput accessibilityLabel="التصنيف" value={classification} onChangeText={setClassification} style={styles.input} textAlign="right" />
                       </Field>
                       <Field label="نوع الملف">
-                        <TextInput value={mimeType} onChangeText={setMimeType} style={styles.input} textAlign="right" />
+                        <TextInput accessibilityLabel="نوع الملف" value={mimeType} onChangeText={setMimeType} style={styles.input} textAlign="right" />
                       </Field>
                       <Field label="الحجم بالبايت">
-                        <TextInput value={sizeBytes} onChangeText={setSizeBytes} style={styles.input} keyboardType="numeric" textAlign="right" />
+                        <TextInput accessibilityLabel="الحجم بالبايت" value={sizeBytes} onChangeText={setSizeBytes} style={styles.input} keyboardType="numeric" textAlign="right" />
                       </Field>
                       <Field label="بصمة الملف">
-                        <TextInput value={checksum} onChangeText={setChecksum} style={styles.input} textAlign="right" />
+                        <TextInput accessibilityLabel="بصمة الملف" value={checksum} onChangeText={setChecksum} style={styles.input} textAlign="right" />
                       </Field>
                       <Field label="المرحلة (اختياري)">
-                        <TextInput value={milestoneId} onChangeText={setMilestoneId} style={styles.input} placeholder="معرّف المرحلة" placeholderTextColor="#8A948D" textAlign="right" />
+                        <TextInput accessibilityLabel="المرحلة" value={milestoneId} onChangeText={setMilestoneId} style={styles.input} placeholder="معرّف المرحلة" placeholderTextColor="#8A948D" textAlign="right" />
                       </Field>
                     </View>
                     {formError ? <FeedbackBanner text={formError} tone="error" /> : null}
@@ -231,7 +231,7 @@ export default function PurchaseOrderDetailScreen() {
                       onPress={() => { void handleEvidence(); }}
                       style={[styles.submit, registerEvidence.isPending && styles.submitDisabled]}
                     >
-                      <Text style={styles.submitText}>تسجيل الدليل</Text>
+                      <Text style={styles.submitText}>{registerEvidence.isPending ? 'جارٍ التسجيل…' : 'تسجيل الدليل'}</Text>
                     </MotionPressable>
                   </View>
                 ) : null}
