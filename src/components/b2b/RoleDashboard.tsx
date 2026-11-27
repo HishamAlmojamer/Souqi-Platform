@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useMemo } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiFeedback } from './ApiFeedback';
@@ -133,11 +133,11 @@ export function RoleDashboard() {
             <View style={[styles.actionGrid, wide && styles.actionGridWide]}>
               {quickActions.map((action) => (
                 <Link key={action.href + action.label} href={action.href as any} asChild>
-                  <Pressable accessibilityRole="link" style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}>
+                  <MotionPressable accessibilityRole="link" style={styles.actionCard} pressedStyle={styles.actionCardPressed} hoverStyle={styles.actionCardHover}>
                     <Text style={styles.actionGlyph}>{action.glyph}</Text>
                     <Text style={styles.actionLabel}>{action.label}</Text>
                     <Text style={styles.actionDetail}>{action.detail}</Text>
-                  </Pressable>
+                  </MotionPressable>
                 </Link>
               ))}
             </View>
@@ -161,7 +161,7 @@ export function RoleDashboard() {
                       href={{ pathname: '/rfq/[id]' as any, params: { id: request.id } } as any}
                       asChild
                     >
-                      <Pressable accessibilityRole="link" style={styles.requestCard}>
+                      <MotionPressable accessibilityRole="link" style={styles.requestCard} pressedStyle={styles.requestCardPressed} hoverStyle={styles.requestCardHover}>
                         <View style={styles.requestTop}>
                           <Text style={styles.requestTitle}>{request.title}</Text>
                           <StatusPill label={status.label} tone={status.tone} small />
@@ -170,7 +170,7 @@ export function RoleDashboard() {
                         <Text style={styles.requestMeta}>
                           {formatNumber(request.quantity)} {request.unit} · {formatNumber(request._count?.quotes ?? 0)} عروض
                         </Text>
-                      </Pressable>
+                  </MotionPressable>
                     </Link>
                   );
                 }) : (
@@ -330,6 +330,7 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   actionCardPressed: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  actionCardHover: { backgroundColor: withAlpha(colors.gold, 0.07), borderColor: withAlpha(colors.gold, 0.55) },
   actionGlyph: { color: colors.accentDark, fontFamily: fonts.bold, fontSize: 20 },
   actionLabel: { color: colors.text, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
   actionDetail: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 10, marginTop: spacing.sm - 2, textAlign: 'right', writingDirection: 'rtl' },
@@ -345,6 +346,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     ...shadows.soft,
   },
+  requestCardPressed: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  requestCardHover: { backgroundColor: withAlpha(colors.gold, 0.05), borderColor: withAlpha(colors.gold, 0.45) },
   requestTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   requestTitle: { flex: 1, minWidth: 0, color: colors.text, fontFamily: fonts.semiBold, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' },
   requestSummary: { color: colors.textSoft, fontFamily: fonts.medium, fontSize: 11, lineHeight: 19, marginTop: spacing.md, textAlign: 'right', writingDirection: 'rtl' },

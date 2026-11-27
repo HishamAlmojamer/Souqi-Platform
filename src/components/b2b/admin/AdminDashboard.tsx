@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../AppHeader';
-import { ScreenEntrance } from '../motion';
-import { colors } from '../palette';
+import { AmbientGlow, MotionPressable, ScreenEntrance } from '../motion';
+import { colors, withAlpha } from '../palette';
 import { containerStyle, useResponsive } from '../responsive';
 import { fonts } from '../typography';
 import {
@@ -211,21 +211,19 @@ function RoleSelector({
   return (
     <View style={styles.selectorRow}>
       {MEMBERSHIP_ROLES.map((role) => (
-        <Pressable
+        <MotionPressable
           key={role}
           accessibilityRole="button"
           accessibilityState={{ selected: value === role }}
           onPress={() => onChange(role)}
-          style={({ pressed }) => [
-            styles.selectorChip,
-            value === role && styles.selectorChipActive,
-            pressed && styles.pressed,
-          ]}
+          style={[styles.selectorChip, value === role && styles.selectorChipActive]}
+          pressedStyle={styles.pressed}
+          hoverStyle={styles.pressed}
         >
           <Text style={[styles.selectorText, value === role && styles.selectorTextActive]}>
             {roleLabel(role)}
           </Text>
-        </Pressable>
+        </MotionPressable>
       ))}
     </View>
   );
@@ -241,21 +239,19 @@ function VerificationSelector({
   return (
     <View style={styles.selectorRow}>
       {VERIFICATION_STATUSES.map((status) => (
-        <Pressable
+        <MotionPressable
           key={status}
           accessibilityRole="button"
           accessibilityState={{ selected: value === status }}
           onPress={() => onChange(status)}
-          style={({ pressed }) => [
-            styles.selectorChip,
-            value === status && styles.selectorChipActive,
-            pressed && styles.pressed,
-          ]}
+          style={[styles.selectorChip, value === status && styles.selectorChipActive]}
+          pressedStyle={styles.pressed}
+          hoverStyle={styles.pressed}
         >
           <Text style={[styles.selectorText, value === status && styles.selectorTextActive]}>
             {statusText(status)}
           </Text>
-        </Pressable>
+        </MotionPressable>
       ))}
     </View>
   );
@@ -563,6 +559,7 @@ export function AdminDashboard() {
       <AppHeader active="admin" />
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <ScreenEntrance style={styles.content}>
+          <AmbientGlow color={colors.gold} size={300} style={styles.adminGlow} duration={3800} min={0.06} max={0.2} />
           <View style={styles.headingRow}>
             <View style={styles.headingCopy}>
               <Text style={styles.kicker}>إدارة المنصة</Text>
@@ -572,38 +569,36 @@ export function AdminDashboard() {
               </Text>
             </View>
             <View style={styles.headerActions}>
-              <Pressable
+              <MotionPressable
                 accessibilityRole="button"
                 onPress={reload}
-                style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                style={styles.secondaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
               >
                 <Text style={styles.secondaryButtonText}>تحديث البيانات</Text>
-              </Pressable>
-              <Pressable
+              </MotionPressable>
+              <MotionPressable
                 accessibilityRole="button"
                 onPress={() => router.navigate('/dashboard' as any)}
-                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+                style={styles.backButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
               >
                 <Text style={styles.backButtonText}>العودة إلى لوحتي</Text>
-              </Pressable>
+              </MotionPressable>
             </View>
           </View>
 
           <View style={styles.tabs}>
             {TABS.map((item) => (
-              <Pressable
+              <MotionPressable
                 key={item.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: tab === item.key }}
                 onPress={() => setTab(item.key)}
-                style={({ pressed }) => [
-                  styles.tab,
-                  tab === item.key && styles.tabActive,
-                  pressed && styles.pressed,
-                ]}
+                style={[styles.tab, tab === item.key && styles.tabActive]}
+                pressedStyle={styles.pressed}
+                hoverStyle={styles.pressed}
               >
                 <Text style={[styles.tabText, tab === item.key && styles.tabTextActive]}>{item.label}</Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </View>
 
@@ -676,16 +671,16 @@ export function AdminDashboard() {
                             {statusText(item.supplierProfile?.verificationStatus)}
                           </Text>
                         </View>
-                        <Pressable
+                        <MotionPressable
                           accessibilityRole="button"
                           onPress={() => {
                             setSelectedOrganizationId(item.id);
                             setTab('approvals');
                           }}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                          style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                         >
                           <Text style={styles.actionButtonText}>مراجعة</Text>
-                        </Pressable>
+                        </MotionPressable>
                       </View>
                     ))
                   ) : (
@@ -701,14 +696,14 @@ export function AdminDashboard() {
                 </View>
                 <View style={styles.quickActions}>
                   {TABS.filter((item) => item.key !== 'overview').map((item) => (
-                    <Pressable
+                    <MotionPressable
                       key={item.key}
                       accessibilityRole="button"
                       onPress={() => setTab(item.key)}
-                      style={({ pressed }) => [styles.quickButton, pressed && styles.pressed]}
+                      style={styles.quickButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                     >
                       <Text style={styles.quickButtonText}>{item.label}</Text>
-                    </Pressable>
+                    </MotionPressable>
                   ))}
                 </View>
               </View>
@@ -754,7 +749,7 @@ export function AdminDashboard() {
                   />
                   <View style={styles.selectorRow}>
                     {(['BUYER', 'SUPPLIER'] as const).map((type) => (
-                      <Pressable
+                      <MotionPressable
                         key={type}
                         accessibilityRole="button"
                         onPress={() => setAccountForm({ ...accountForm, accountType: type })}
@@ -766,9 +761,9 @@ export function AdminDashboard() {
                         <Text style={[styles.selectorText, accountForm.accountType === type && styles.selectorTextActive]}>
                           {type === 'BUYER' ? 'مشتري' : 'مورد'}
                         </Text>
-                      </Pressable>
+                      </MotionPressable>
                     ))}
-                    <Pressable
+                    <MotionPressable
                       accessibilityRole="button"
                       accessibilityState={{ checked: accountForm.isPlatformAdmin }}
                       onPress={() => setAccountForm({ ...accountForm, isPlatformAdmin: !accountForm.isPlatformAdmin })}
@@ -780,17 +775,17 @@ export function AdminDashboard() {
                       <Text style={[styles.selectorText, accountForm.isPlatformAdmin && styles.selectorTextActive]}>
                         {accountForm.isPlatformAdmin ? '✓ مدير منصة' : 'مدير منصة؟'}
                       </Text>
-                    </Pressable>
+                    </MotionPressable>
                   </View>
                 </View>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={mutation.isPending}
                   onPress={() => void createAccount()}
-                  style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  style={styles.primaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                 >
                   <Text style={styles.primaryButtonText}>إنشاء الحساب</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
 
               <View style={styles.panel}>
@@ -820,19 +815,17 @@ export function AdminDashboard() {
                           ).join('، ') || 'لا توجد مؤسسات'}
                         </Text>
                       </View>
-                      <Pressable
+                      <MotionPressable
                         accessibilityRole="button"
                         onPress={() => void toggleAdmin(item)}
-                        style={({ pressed }) => [
-                          styles.actionButton,
-                          item.isPlatformAdmin && styles.actionButtonActive,
-                          pressed && styles.pressed,
-                        ]}
+                        style={[styles.actionButton, item.isPlatformAdmin && styles.actionButtonActive]}
+                        pressedStyle={styles.pressed}
+                        hoverStyle={styles.pressed}
                       >
                         <Text style={[styles.actionButtonText, item.isPlatformAdmin && styles.actionButtonTextActive]}>
                           {item.isPlatformAdmin ? 'إلغاء Admin' : 'تعيين Admin'}
                         </Text>
-                      </Pressable>
+                      </MotionPressable>
                     </View>
                   ))
                 ) : (
@@ -873,7 +866,7 @@ export function AdminDashboard() {
                   />
                   <View style={styles.selectorRow}>
                     {(['BUYER', 'SUPPLIER'] as const).map((type) => (
-                      <Pressable
+                      <MotionPressable
                         key={type}
                         accessibilityRole="button"
                         onPress={() => setOrganizationForm({ ...organizationForm, type })}
@@ -885,18 +878,18 @@ export function AdminDashboard() {
                         <Text style={[styles.selectorText, organizationForm.type === type && styles.selectorTextActive]}>
                           {type === 'BUYER' ? 'مشتري' : 'مورد'}
                         </Text>
-                      </Pressable>
+                      </MotionPressable>
                     ))}
                   </View>
                 </View>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={mutation.isPending}
                   onPress={() => void createOrganization()}
-                  style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  style={styles.primaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                 >
                   <Text style={styles.primaryButtonText}>إنشاء المؤسسة</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
 
               <View style={styles.panel}>
@@ -913,7 +906,7 @@ export function AdminDashboard() {
                     style={[styles.input, styles.filterInput]}
                   />
                   {(['ALL', 'BUYER', 'SUPPLIER'] as const).map((type) => (
-                    <Pressable
+                    <MotionPressable
                       key={type}
                       accessibilityRole="button"
                       onPress={() => setOrganizationType(type)}
@@ -925,7 +918,7 @@ export function AdminDashboard() {
                       <Text style={[styles.selectorText, organizationType === type && styles.selectorTextActive]}>
                         {type === 'ALL' ? 'الكل' : type === 'BUYER' ? 'مشترون' : 'موردون'}
                       </Text>
-                    </Pressable>
+                    </MotionPressable>
                   ))}
                 </View>
                 {filteredOrganizations.length ? (
@@ -953,25 +946,25 @@ export function AdminDashboard() {
                         ) : null}
                       </View>
                       <View style={styles.actionColumn}>
-                        <Pressable
+                        <MotionPressable
                           accessibilityRole="button"
                           onPress={() => void setOrganizationStatus(item)}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                          style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                         >
                           <Text style={styles.actionButtonText}>
                             {item.status === 'ACTIVE' ? 'تعليق' : 'تفعيل'}
                           </Text>
-                        </Pressable>
-                        <Pressable
+                        </MotionPressable>
+                        <MotionPressable
                           accessibilityRole="button"
                           onPress={() => {
                             setSelectedOrganizationId(item.id);
                             setTab('members');
                           }}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                          style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                         >
                           <Text style={styles.actionButtonText}>الأعضاء</Text>
-                        </Pressable>
+                        </MotionPressable>
                       </View>
                     </View>
                   ))
@@ -993,7 +986,7 @@ export function AdminDashboard() {
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.orgPicker}>
                 {organizations.map((item) => (
-                  <Pressable
+                  <MotionPressable
                     key={item.id}
                     accessibilityRole="button"
                     accessibilityState={{ selected: item.id === activeOrganizationId }}
@@ -1006,7 +999,7 @@ export function AdminDashboard() {
                     <Text style={[styles.selectorText, item.id === activeOrganizationId && styles.selectorTextActive]}>
                       {item.displayName}
                     </Text>
-                  </Pressable>
+                  </MotionPressable>
                 ))}
               </ScrollView>
               <View style={styles.addMemberRow}>
@@ -1019,14 +1012,14 @@ export function AdminDashboard() {
                   keyboardType="email-address"
                   style={styles.input}
                 />
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={mutation.isPending}
                   onPress={() => void addMember()}
-                  style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  style={styles.primaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                 >
                   <Text style={styles.primaryButtonText}>إضافة عضو</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
               <RoleSelector value={newMemberRole} onChange={setNewMemberRole} />
               {membersQuery.isLoading ? <Text style={styles.loadingText}>جارٍ تحميل الأعضاء…</Text> : null}
@@ -1045,22 +1038,22 @@ export function AdminDashboard() {
                       />
                     </View>
                     <View style={styles.actionColumn}>
-                      <Pressable
+                      <MotionPressable
                         accessibilityRole="button"
                         onPress={() => void toggleMemberStatus(member)}
-                        style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                        style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                       >
                         <Text style={styles.actionButtonText}>
                           {member.status === 'ACTIVE' ? 'تعطيل' : 'تفعيل'}
                         </Text>
-                      </Pressable>
-                      <Pressable
+                      </MotionPressable>
+                      <MotionPressable
                         accessibilityRole="button"
                         onPress={() => void removeMember(member)}
-                        style={({ pressed }) => [styles.dangerButton, pressed && styles.pressed]}
+                        style={styles.dangerButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                       >
                         <Text style={styles.dangerButtonText}>إزالة</Text>
-                      </Pressable>
+                      </MotionPressable>
                     </View>
                   </View>
                 ))
@@ -1087,20 +1080,20 @@ export function AdminDashboard() {
                       </Text>
                     </View>
                     <View style={styles.actionColumn}>
-                      <Pressable
+                      <MotionPressable
                         accessibilityRole="button"
                         onPress={() => void setVerification(item, 'APPROVED')}
-                        style={({ pressed }) => [styles.approveButton, pressed && styles.pressed]}
+                        style={styles.approveButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                       >
                         <Text style={styles.approveButtonText}>اعتماد</Text>
-                      </Pressable>
-                      <Pressable
+                      </MotionPressable>
+                      <MotionPressable
                         accessibilityRole="button"
                         onPress={() => void setVerification(item, 'REJECTED')}
-                        style={({ pressed }) => [styles.dangerButton, pressed && styles.pressed]}
+                        style={styles.dangerButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                       >
                         <Text style={styles.dangerButtonText}>رفض</Text>
-                      </Pressable>
+                      </MotionPressable>
                     </View>
                   </View>
                 ))
@@ -1132,14 +1125,14 @@ export function AdminDashboard() {
                     style={styles.input}
                   />
                 </View>
-                <Pressable
+                <MotionPressable
                   accessibilityRole="button"
                   disabled={mutation.isPending}
                   onPress={() => void createIndustry()}
-                  style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  style={styles.primaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                 >
                   <Text style={styles.primaryButtonText}>إنشاء القطاع</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
 
               <View style={styles.panel}>
@@ -1156,15 +1149,15 @@ export function AdminDashboard() {
                         <Text style={styles.itemMeta}>
                           {industry._count.schemaVersions} مخططات · {industry._count.rfqs} طلبات عرض
                         </Text>
-                        <Pressable
+                        <MotionPressable
                           accessibilityRole="button"
                           onPress={() => setExpandedIndustryId(expandedIndustryId === industry.id ? '' : industry.id)}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                          style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                         >
                           <Text style={styles.actionButtonText}>
                             {expandedIndustryId === industry.id ? 'إخفاء المخططات' : 'إدارة المخططات'}
                           </Text>
-                        </Pressable>
+                        </MotionPressable>
                       </View>
                       <View style={styles.versionBox}>
                         <Text style={styles.versionTitle}>الإصدار المنشور</Text>
@@ -1185,13 +1178,13 @@ export function AdminDashboard() {
                                   <Text style={styles.itemMeta}>{formatDate(version.publishedAt)}</Text>
                                 </View>
                                 {version.status !== 'PUBLISHED' ? (
-                                  <Pressable
+                                  <MotionPressable
                                     accessibilityRole="button"
                                     onPress={() => void publishSchemaVersion(version.id)}
-                                    style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+                                    style={styles.actionButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                                   >
                                     <Text style={styles.actionButtonText}>نشر</Text>
-                                  </Pressable>
+                                  </MotionPressable>
                                 ) : null}
                               </View>
                             ))
@@ -1216,23 +1209,23 @@ export function AdminDashboard() {
                               numberOfLines={7}
                               style={styles.textArea}
                             />
-                            <Pressable
+                            <MotionPressable
                               accessibilityRole="button"
                               onPress={() => setSchemaForm({ ...schemaForm, publish: !schemaForm.publish })}
-                              style={({ pressed }) => [styles.selectorChip, pressed && styles.pressed]}
+                              style={styles.selectorChip} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                             >
                               <Text style={styles.selectorText}>
                                 {schemaForm.publish ? '✓ نشر فوري' : 'حفظ كمسودة'}
                               </Text>
-                            </Pressable>
-                            <Pressable
+                            </MotionPressable>
+                            <MotionPressable
                               accessibilityRole="button"
                               disabled={mutation.isPending}
                               onPress={() => void createSchemaVersion()}
-                              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                              style={styles.primaryButton} pressedStyle={styles.pressed} hoverStyle={styles.pressed}
                             >
                               <Text style={styles.primaryButtonText}>إضافة إصدار المخطط</Text>
-                            </Pressable>
+                            </MotionPressable>
                           </View>
                         </View>
                       ) : null}
@@ -1302,7 +1295,7 @@ export function AdminDashboard() {
                   style={[styles.input, styles.filterInput]}
                 />
                 {(['ALL', 'false', 'true'] as const).map((filter) => (
-                  <Pressable
+                  <MotionPressable
                     key={filter}
                     accessibilityRole="button"
                     onPress={() => setEventFilter(filter)}
@@ -1311,7 +1304,7 @@ export function AdminDashboard() {
                     <Text style={[styles.selectorText, eventFilter === filter && styles.selectorTextActive]}>
                       {filter === 'ALL' ? 'الكل' : filter === 'false' ? 'غير منشورة' : 'منشورة'}
                     </Text>
-                  </Pressable>
+                  </MotionPressable>
                 ))}
               </View>
               {outboxEvents.length ? (
@@ -1407,7 +1400,8 @@ export function AdminDashboard() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.cream },
   page: { paddingBottom: 34 },
-  content: { ...containerStyle, paddingTop: 28 },
+  content: { ...containerStyle, position: 'relative', paddingTop: 28 },
+  adminGlow: { top: -130, right: -90 },
   headingRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
   headingCopy: { flex: 1, minWidth: 240, alignItems: 'flex-end' },
   kicker: { color: colors.goldDeep, fontSize: 11, fontWeight: '800', textAlign: 'right', writingDirection: 'rtl' },
@@ -1421,7 +1415,7 @@ const styles = StyleSheet.create({
   backButtonText: { color: colors.goldDeep, fontFamily: fonts.semiBold, fontSize: 11, writingDirection: 'rtl' },
   tabs: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 7, marginTop: 22 },
   tab: { minHeight: 40, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, justifyContent: 'center' },
-  tabActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
+  tabActive: { backgroundColor: colors.goldDeep, borderColor: colors.goldDeep },
   pressed: { opacity: 0.78 },
   tabText: { color: colors.inkSoft, fontFamily: fonts.medium, fontSize: 11, writingDirection: 'rtl' },
   tabTextActive: { color: colors.goldLight, fontFamily: fonts.semiBold },
@@ -1430,13 +1424,13 @@ const styles = StyleSheet.create({
   noticeText: { color: colors.green, backgroundColor: colors.greenLight, borderRadius: 8, padding: 11, fontFamily: fonts.medium, fontSize: 11, marginTop: 16, textAlign: 'right', writingDirection: 'rtl' },
   metricGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 11, marginTop: 20 },
   metricCard: { flexGrow: 1, flexBasis: 150, minHeight: 118, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 15, alignItems: 'flex-end' },
-  metricValue: { color: colors.greenDark, fontFamily: fonts.bold, fontSize: 28, fontWeight: '900' },
+  metricValue: { color: colors.goldDeep, fontFamily: fonts.bold, fontSize: 28, fontWeight: '900' },
   metricLabel: { color: colors.ink, fontFamily: fonts.semiBold, fontSize: 11, marginTop: 8, textAlign: 'right', writingDirection: 'rtl' },
   metricDetail: { color: colors.muted, fontFamily: fonts.medium, fontSize: 9, marginTop: 4, textAlign: 'right', writingDirection: 'rtl' },
   overviewColumns: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 14 },
   quickActions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  quickButton: { minHeight: 38, paddingHorizontal: 13, borderRadius: 8, backgroundColor: colors.greenLight, justifyContent: 'center' },
-  quickButtonText: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 10, writingDirection: 'rtl' },
+  quickButton: { minHeight: 38, paddingHorizontal: 13, borderRadius: 8, backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: withAlpha(colors.gold, 0.35), justifyContent: 'center' },
+  quickButtonText: { color: colors.goldLight, fontFamily: fonts.semiBold, fontSize: 10, writingDirection: 'rtl' },
   panel: { marginTop: 20, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 15, flexGrow: 1, flexBasis: 340, minWidth: 0, maxWidth: '100%' },
   panelHeading: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   panelTitle: { color: colors.ink, fontFamily: fonts.bold, fontSize: 15, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl' },
@@ -1457,10 +1451,10 @@ const styles = StyleSheet.create({
   actionButtonActive: { backgroundColor: colors.goldLight },
   actionButtonText: { color: colors.goldDeep, fontFamily: fonts.semiBold, fontSize: 9, writingDirection: 'rtl' },
   actionButtonTextActive: { color: colors.ink },
-  primaryButton: { minHeight: 42, alignSelf: 'flex-start', paddingHorizontal: 18, borderRadius: 8, backgroundColor: colors.greenDark, justifyContent: 'center', marginTop: 12 },
+  primaryButton: { minHeight: 42, alignSelf: 'flex-start', paddingHorizontal: 18, borderRadius: 8, backgroundColor: colors.goldDeep, justifyContent: 'center', marginTop: 12 },
   primaryButtonText: { color: colors.goldLight, fontFamily: fonts.semiBold, fontSize: 11, writingDirection: 'rtl' },
   secondaryText: { color: colors.inkSoft, fontFamily: fonts.medium, fontSize: 9 },
-  approveButton: { minHeight: 34, paddingHorizontal: 13, borderRadius: 7, backgroundColor: colors.green, justifyContent: 'center' },
+  approveButton: { minHeight: 34, paddingHorizontal: 13, borderRadius: 7, backgroundColor: colors.goldDeep, justifyContent: 'center' },
   approveButtonText: { color: colors.paper, fontFamily: fonts.semiBold, fontSize: 9, writingDirection: 'rtl' },
   dangerButton: { minHeight: 34, paddingHorizontal: 13, borderRadius: 7, borderWidth: 1, borderColor: colors.red, backgroundColor: colors.redLight, justifyContent: 'center' },
   dangerButtonText: { color: colors.red, fontFamily: fonts.semiBold, fontSize: 9, writingDirection: 'rtl' },
@@ -1471,14 +1465,14 @@ const styles = StyleSheet.create({
   filterInput: { flexGrow: 1, flexBasis: 220 },
   selectorRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   selectorChip: { minHeight: 34, paddingHorizontal: 11, borderRadius: 7, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.stone, justifyContent: 'center' },
-  selectorChipActive: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
+  selectorChipActive: { backgroundColor: colors.goldDeep, borderColor: colors.goldDeep },
   selectorText: { color: colors.inkSoft, fontFamily: fonts.medium, fontSize: 9, writingDirection: 'rtl' },
   selectorTextActive: { color: colors.goldLight, fontFamily: fonts.semiBold },
   addMemberRow: { flexDirection: 'row-reverse', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   orgPicker: { flexDirection: 'row-reverse', gap: 7, paddingVertical: 8 },
-  versionBox: { minWidth: 105, alignItems: 'flex-end', backgroundColor: colors.greenLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  versionBox: { minWidth: 105, alignItems: 'flex-end', backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: withAlpha(colors.gold, 0.35), borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   versionTitle: { color: colors.muted, fontFamily: fonts.medium, fontSize: 8, writingDirection: 'rtl' },
-  versionValue: { color: colors.green, fontFamily: fonts.bold, fontSize: 16, marginTop: 3 },
+  versionValue: { color: colors.goldLight, fontFamily: fonts.bold, fontSize: 16, marginTop: 3 },
   schemaPanel: { width: '100%', marginTop: 14, backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 12 },
   schemaForm: { gap: 9, marginTop: 12 },
   table: { marginTop: 8 },
@@ -1491,7 +1485,7 @@ const styles = StyleSheet.create({
   tableCell: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.medium, fontSize: 9, textAlign: 'center', writingDirection: 'rtl' },
   tableHead: { color: colors.goldDeep, fontFamily: fonts.semiBold },
   tableLabel: { color: colors.inkSoft, textAlign: 'right' },
-  tableAllowed: { color: colors.green, fontFamily: fonts.bold, fontSize: 13 },
+  tableAllowed: { color: colors.accentDark, fontFamily: fonts.bold, fontSize: 13 },
   tableDenied: { color: colors.muted },
   footer: { color: colors.muted, fontFamily: fonts.medium, fontSize: 9, marginTop: 24, textAlign: 'center', writingDirection: 'rtl' },
 });

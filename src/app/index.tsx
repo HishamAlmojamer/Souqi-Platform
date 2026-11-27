@@ -3,8 +3,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/b2b/AppHeader';
-import { MotionPressable, ScreenEntrance, Stagger } from '@/components/b2b/motion';
-import { colors } from '@/components/b2b/palette';
+import { AmbientGlow, MotionPressable, ScreenEntrance, Stagger } from '@/components/b2b/motion';
+import { colors, withAlpha } from '@/components/b2b/palette';
 import { containerStyle, useResponsive } from '@/components/b2b/responsive';
 import { fonts, typeScale } from '@/components/b2b/typography';
 
@@ -32,7 +32,7 @@ export default function LandingScreen() {
       <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
         <ScreenEntrance style={styles.pageInner}>
         <View style={[styles.hero, { paddingHorizontal: wide ? 44 : gutter }]}>
-          <View style={[styles.heroGlow, styles.decorative]} />
+          <AmbientGlow color={colors.gold} size={430} style={styles.heroGlow} duration={4200} min={0.08} max={0.24} />
           <View style={[styles.heroOrb, styles.decorative]} />
           <View style={[styles.heroArc, styles.decorative]} />
           <View style={[styles.heroInner, wide && styles.heroInnerWide]}>
@@ -53,6 +53,8 @@ export default function LandingScreen() {
                   accessibilityRole="button"
                   onPress={() => router.navigate('/rfq/new' as any)}
                   style={styles.primaryButton}
+                  pressedStyle={styles.primaryButtonPressed}
+                  hoverStyle={styles.primaryButtonHover}
                 >
                   <Text style={styles.primaryButtonText}>ابدأ طلب عروض الأسعار <Text style={styles.buttonArrow}>←</Text></Text>
                 </MotionPressable>
@@ -60,6 +62,8 @@ export default function LandingScreen() {
                   accessibilityRole="button"
                   onPress={() => router.navigate('/workspace' as any)}
                   style={styles.secondaryButton}
+                  pressedStyle={styles.secondaryButtonPressed}
+                  hoverStyle={styles.secondaryButtonHover}
                 >
                   <Text style={styles.secondaryButtonText}>استكشف مساحة المشتري</Text>
                 </MotionPressable>
@@ -176,6 +180,8 @@ export default function LandingScreen() {
                   accessibilityLabel={`${sector.title} — ${sector.note}`}
                   onPress={() => router.navigate('/rfq/new' as any)}
                   style={styles.sectorCardInner}
+                  pressedStyle={styles.sectorCardInnerPressed}
+                  hoverStyle={styles.sectorCardInnerHover}
                 >
                   <View style={styles.sectorTopline}>
                     <Text style={styles.sectorIndex}>{sector.index}</Text>
@@ -210,7 +216,7 @@ export default function LandingScreen() {
         </View>
 
         <View style={[styles.bottomCta, { marginHorizontal: wide ? 42 : 20 }]}>
-          <View style={[styles.ctaGlow, styles.decorative]} />
+          <AmbientGlow color={colors.highlight} size={300} style={styles.ctaGlow} duration={3600} min={0.07} max={0.2} />
           <View style={[styles.ctaContent, wide && styles.ctaContentWide]}>
             <View>
               <Text style={styles.ctaKicker}>جاهز لترتيب أول طلب؟</Text>
@@ -218,9 +224,11 @@ export default function LandingScreen() {
             </View>
             <MotionPressable
               accessibilityRole="button"
-              onPress={() => router.navigate('/rfq/new' as any)}
-              style={styles.ctaButton}
-            >
+                  onPress={() => router.navigate('/rfq/new' as any)}
+                  style={styles.ctaButton}
+                  pressedStyle={styles.ctaButtonPressed}
+                  hoverStyle={styles.ctaButtonHover}
+                >
               <Text style={styles.ctaButtonText}>إنشاء طلب توريد <Text>←</Text></Text>
             </MotionPressable>
           </View>
@@ -271,13 +279,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.gold,
   },
   heroGlow: {
-    position: 'absolute',
     top: -170,
     left: -130,
     width: 430,
     height: 430,
     borderRadius: 215,
-    backgroundColor: 'rgba(201,154,69,0.13)',
   },
   heroOrb: {
     position: 'absolute',
@@ -325,6 +331,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonPressed: { backgroundColor: colors.highlight, transform: [{ scale: 0.985 }] },
+  primaryButtonHover: { backgroundColor: colors.goldDeep },
   primaryButtonText: {
     color: colors.obsidian,
     fontFamily: fonts.semiBold,
@@ -344,9 +351,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonPressed: {
-    backgroundColor: 'rgba(201,154,69,0.15)',
+    backgroundColor: withAlpha(colors.gold, 0.16),
     borderColor: colors.highlight,
     transform: [{ scale: 0.985 }],
+  },
+  secondaryButtonHover: {
+    backgroundColor: withAlpha(colors.gold, 0.08),
+    borderColor: colors.highlight,
   },
   secondaryButtonText: {
     color: colors.cream,
@@ -613,7 +624,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     justifyContent: 'space-between',
   },
-  sectorCardInner: { flex: 1 },
+  sectorCardInner: { flex: 1, borderRadius: 8 },
+  sectorCardInnerPressed: { backgroundColor: withAlpha(colors.gold, 0.12), borderRadius: 8 },
+  sectorCardInnerHover: { backgroundColor: withAlpha(colors.gold, 0.05), borderRadius: 8 },
   sectorCardFull: { flexBasis: '100%', flexGrow: 1 },
   sectorCardHalf: { flexBasis: '46%', flexGrow: 1, minHeight: 176 },
   sectorCardQuad: { flexBasis: '22%', flexGrow: 1, minHeight: 186 },
@@ -733,13 +746,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   ctaGlow: {
-    position: 'absolute',
     bottom: -150,
     left: -90,
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(201,154,69,0.12)',
   },
   ctaContent: { gap: 20 },
   ctaContentWide: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
@@ -771,6 +782,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ctaButtonPressed: { backgroundColor: colors.highlight, transform: [{ scale: 0.985 }] },
+  ctaButtonHover: { backgroundColor: colors.goldDeep },
   ctaButtonText: {
     color: colors.obsidian,
     fontFamily: fonts.semiBold,

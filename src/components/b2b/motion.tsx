@@ -105,6 +105,76 @@ export function useEntranceStyle(options: EntranceOptions = {}) {
   return useEntranceValues(options).animatedStyle;
 }
 
+type BreathingOptions = {
+  duration?: number;
+  min?: number;
+  max?: number;
+  paused?: boolean;
+};
+
+export function useBreathing({ duration = 2600, min = 0.12, max = 0.34, paused = false }: BreathingOptions = {}) {
+  const reducedMotion = useReducedMotion();
+  const [progress] = useState(() => new Animated.Value(min));
+
+  useEffect(() => {
+    if (reducedMotion || paused) {
+      progress.setValue(min);
+      return;
+    }
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(progress, {
+          toValue: max,
+          duration,
+          easing: Easing.inOut(Easing.quad),
+          isInteraction: false,
+          useNativeDriver: true,
+        }),
+        Animated.timing(progress, {
+          toValue: min,
+          duration,
+          easing: Easing.inOut(Easing.quad),
+          isInteraction: false,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [duration, max, min, paused, progress, reducedMotion]);
+
+  return progress;
+}
+
+type AmbientGlowProps = ViewProps & BreathingOptions & {
+  color?: string;
+  size?: number;
+};
+
+export function AmbientGlow({
+  color = colors.gold,
+  size = 240,
+  duration,
+  min,
+  max,
+  paused,
+  style,
+  ...rest
+}: AmbientGlowProps) {
+  const opacity = useBreathing({ duration, min, max, paused });
+  return (
+    <Animated.View
+      {...rest}
+      pointerEvents="none"
+      style={[
+        styles.ambientGlow,
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: color, opacity },
+        style,
+      ]}
+    />
+  );
+}
+
 type ScreenEntranceProps = ViewProps & EntranceOptions;
 
 export function ScreenEntrance({
@@ -156,8 +226,11 @@ export function Stagger({
 type MotionPressableProps = Omit<PressableProps, 'style'> & {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  pressedStyle?: StyleProp<ViewStyle>;
+  hoverStyle?: StyleProp<ViewStyle>;
   pressScale?: number;
   duration?: number;
+  glow?: boolean;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -165,41 +238,89 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function MotionPressable({
   children,
   style,
+  pressedStyle,
+  hoverStyle,
   onPressIn,
   onPressOut,
+  onHoverIn,
+  onHoverOut,
   pressScale = 0.985,
   duration = 110,
+  glow = true,
   ...rest
 }: MotionPressableProps) {
   const reducedMotion = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [scale] = useState(() => new Animated.Value(1));
+  const [glowOpacity] = useState(() => new Animated.Value(0));
 
-  const animateScale = (toValue: number) => {
+  const animateInteraction = (nextPressed: boolean, nextHovered: boolean) => {
+    const targetScale = nextPressed ? pressScale : nextHovered ? 1.008 : 1;
+    const targetGlow = nextPressed ? 0.18 : nextHovered ? 0.07 : 0;
     if (reducedMotion) {
       scale.setValue(1);
+      glowOpacity.setValue(0);
       return;
     }
-    Animated.timing(scale, {
-      toValue,
-      duration,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(scale, {
+        toValue: targetScale,
+        duration,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowOpacity, {
+        toValue: targetGlow,
+        duration,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
+
+  const flatStyle = StyleSheet.flatten(style) as ViewStyle | undefined;
+  const glowRadius = typeof flatStyle?.borderRadius === 'number' ? flatStyle.borderRadius : radii.sm;
 
   return (
     <AnimatedPressable
       {...rest}
       onPressIn={(event) => {
-        animateScale(pressScale);
+        setPressed(true);
+        animateInteraction(true, hovered);
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        animateScale(1);
+        setPressed(false);
+        animateInteraction(false, hovered);
         onPressOut?.(event);
       }}
-      style={[style, { transform: [{ scale }] }]}
+      onHoverIn={(event) => {
+        setHovered(true);
+        animateInteraction(pressed, true);
+        onHoverIn?.(event);
+      }}
+      onHoverOut={(event) => {
+        setHovered(false);
+        animateInteraction(pressed, false);
+        onHoverOut?.(event);
+      }}
+      style={[
+        style,
+        hovered && hoverStyle,
+        pressed && pressedStyle,
+        { transform: [{ scale }] },
+      ]}
     >
+      {glow ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.pressGlow,
+            { borderRadius: glowRadius, backgroundColor: withAlpha(colors.highlight, 0.6), opacity: glowOpacity },
+          ]}
+        />
+      ) : null}
       {children}
     </AnimatedPressable>
   );
@@ -372,6 +493,18 @@ export function FeedbackBanner({ text, tone = 'info', style, ...rest }: Feedback
 
 const styles = StyleSheet.create({
   visible: { opacity: 1 },
+  ambientGlow: {
+    position: 'absolute',
+    pointerEvents: 'none',
+  },
+  pressGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+  },
   tabIndicator: {
     position: 'absolute',
     bottom: 0,

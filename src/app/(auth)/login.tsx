@@ -1,8 +1,9 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { AuthLayout, authStyles } from '@/components/b2b/AuthLayout';
+import { MotionPressable } from '@/components/b2b/motion';
 import { colors } from '@/components/b2b/palette';
 import { useResponsive } from '@/components/b2b/responsive';
 import { safeDestination, withNext } from '@/data/navigation';
@@ -81,15 +82,15 @@ export default function LoginScreen() {
               style={authStyles.inputWithAction}
               textAlign="right"
             />
-            <Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} onPress={() => setPasswordVisible(!passwordVisible)} style={authStyles.visibilityButton}>
+            <MotionPressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} onPress={() => setPasswordVisible(!passwordVisible)} style={authStyles.visibilityButton} glow={false}>
               <Text style={authStyles.visibilityText}>{passwordVisible ? 'إخفاء' : 'إظهار'}</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
         </View>
 
-        <Pressable accessibilityRole="button" accessibilityState={{ disabled: submitting }} disabled={submitting} onPress={handleSubmit} style={authStyles.primaryButton}>
+        <MotionPressable accessibilityRole="button" accessibilityState={{ disabled: submitting }} disabled={submitting} onPress={handleSubmit} style={authStyles.primaryButton} pressedStyle={authStyles.primaryButtonPressed} hoverStyle={authStyles.primaryButtonHover}>
           <Text style={authStyles.primaryButtonText}>{submitting ? 'جارٍ التحقق…' : 'تسجيل الدخول'}</Text>
-        </Pressable>
+        </MotionPressable>
         {error ? <Text accessibilityRole="alert" style={authStyles.feedback}>{error}</Text> : null}
         {message ? <Text accessibilityLiveRegion="polite" style={authStyles.success}>{message}</Text> : null}
 

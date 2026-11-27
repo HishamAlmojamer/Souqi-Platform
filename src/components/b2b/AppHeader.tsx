@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark } from './BrandMark';
-import { PulseBadge, TabIndicator } from './motion';
+import { MotionPressable, PulseBadge, ScreenEntrance, TabIndicator } from './motion';
 import { colors, radii, shadows, spacing, withAlpha } from './palette';
 import { containerStyle, useResponsive } from './responsive';
 import { fonts } from './typography';
@@ -47,18 +47,20 @@ export function AppHeader({ active }: AppHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={[styles.inner, { paddingHorizontal: gutter }]}>
-        <Pressable
+        <MotionPressable
           accessibilityRole="button"
           accessibilityLabel="العودة إلى الرئيسية"
           onPress={() => router.navigate('/')}
-          style={({ pressed }) => [styles.brand, pressed && styles.brandPressed]}
+          style={styles.brand}
+          pressedStyle={styles.brandPressed}
+          hoverStyle={styles.brandHover}
         >
           <BrandMark size={isDesktop ? 44 : 38} />
           <View style={styles.brandCopy}>
             <Text style={styles.brandName}>سوقي</Text>
             <Text style={styles.brandSub}>للتصنيع والتوريد</Text>
           </View>
-        </Pressable>
+        </MotionPressable>
         {isDesktop ? (
           <View style={styles.nav}>
             {links.map((link) => (
@@ -66,44 +68,52 @@ export function AppHeader({ active }: AppHeaderProps) {
             ))}
           </View>
         ) : (
-          <Pressable
+          <MotionPressable
             accessibilityRole="button"
             accessibilityLabel={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
             onPress={() => setMenuOpen((open) => !open)}
-            style={({ pressed }) => [styles.mobileMenuButton, pressed && styles.mobileButtonPressed]}
+            style={styles.mobileMenuButton}
+            pressedStyle={styles.mobileButtonPressed}
+            hoverStyle={styles.mobileMenuHover}
           >
             <Text style={styles.mobileButtonText}>{menuOpen ? 'إغلاق' : 'القائمة'}</Text>
-          </Pressable>
+          </MotionPressable>
         )}
         {isDesktop ? token ? (
           <View style={styles.accountCluster}>
             <Text style={styles.accountRole}>{roleLabel(role)}</Text>
-            <Pressable
+            <MotionPressable
               accessibilityRole="button"
               onPress={() => router.navigate('/dashboard' as any)}
-              style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
+              style={styles.accountButton}
+              pressedStyle={styles.accountButtonPressed}
+              hoverStyle={styles.accountButtonHover}
             >
               <Text style={styles.accountButtonText}>لوحتي</Text>
-            </Pressable>
-            <Pressable
+            </MotionPressable>
+            <MotionPressable
               accessibilityRole="button"
               onPress={() => void logout()}
-              style={({ pressed }) => [styles.logoutButton, pressed && styles.accountButtonPressed]}
+              style={styles.logoutButton}
+              pressedStyle={styles.accountButtonPressed}
+              hoverStyle={styles.logoutHover}
             >
               <Text style={styles.logoutText}>خروج</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
         ) : (
-          <Pressable
+          <MotionPressable
             accessibilityRole="button"
             onPress={() => router.navigate('/login' as any)}
-            style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
+            style={styles.accountButton}
+            pressedStyle={styles.accountButtonPressed}
+            hoverStyle={styles.accountButtonHover}
           >
             <Text style={styles.accountButtonText}>تسجيل الدخول</Text>
-          </Pressable>
+          </MotionPressable>
         ) : null}
         {!isDesktop && menuOpen ? (
-          <View style={styles.mobileNav}>
+          <ScreenEntrance style={styles.mobileNav} duration={240} translateY={-8}>
             {links.map((link) => (
               <HeaderLink
                 key={link.href}
@@ -117,18 +127,18 @@ export function AppHeader({ active }: AppHeaderProps) {
             <View style={styles.mobileAccountRow}>
               {token ? (
                 <>
-                  <Pressable accessibilityRole="button" onPress={() => { closeMenu(); void logout(); }} style={styles.mobileAccountButton}>
+                  <MotionPressable accessibilityRole="button" onPress={() => { closeMenu(); void logout(); }} style={styles.mobileAccountButton} pressedStyle={styles.accountButtonPressed} hoverStyle={styles.accountButtonHover}>
                     <Text style={styles.mobileAccountText}>تسجيل الخروج</Text>
-                  </Pressable>
+                  </MotionPressable>
                   <Text style={styles.mobileRole}>{roleLabel(role)}</Text>
                 </>
               ) : (
-                <Pressable accessibilityRole="button" onPress={() => { closeMenu(); router.navigate('/login' as any); }} style={styles.mobileAccountButton}>
+                <MotionPressable accessibilityRole="button" onPress={() => { closeMenu(); router.navigate('/login' as any); }} style={styles.mobileAccountButton} pressedStyle={styles.accountButtonPressed} hoverStyle={styles.accountButtonHover}>
                   <Text style={styles.mobileAccountText}>تسجيل الدخول</Text>
-                </Pressable>
+                </MotionPressable>
               )}
             </View>
-          </View>
+          </ScreenEntrance>
         ) : null}
       </View>
     </View>
@@ -139,18 +149,16 @@ function HeaderLink({ href, label, active, badge = 0, onPress }: { href: string;
   const router = useRouter();
 
   return (
-    <Pressable
+    <MotionPressable
       accessibilityRole="link"
       accessibilityState={{ selected: active }}
       onPress={() => {
         onPress?.();
         router.navigate(href as any);
       }}
-      style={({ pressed }) => [
-        styles.navLink,
-        active && styles.navLinkActive,
-        pressed && styles.navLinkPressed,
-      ]}
+      style={[styles.navLink, active && styles.navLinkActive]}
+      pressedStyle={styles.navLinkPressed}
+      hoverStyle={styles.navLinkHover}
     >
       <Text style={[styles.navText, active && styles.navTextActive]}>{label}</Text>
       {badge > 0 ? (
@@ -159,15 +167,17 @@ function HeaderLink({ href, label, active, badge = 0, onPress }: { href: string;
         </PulseBadge>
       ) : null}
       <TabIndicator active={active} color={colors.accent} />
-    </Pressable>
+    </MotionPressable>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: withAlpha(colors.surface, 0.94),
+    backgroundColor: withAlpha(colors.surface, 0.97),
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: withAlpha(colors.goldDeep, 0.26),
     ...shadows.header,
   },
   inner: {
@@ -189,6 +199,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
   },
   brandPressed: { opacity: 0.75 },
+  brandHover: { opacity: 0.92 },
   brandCopy: { alignItems: 'flex-end' },
   brandName: {
     color: colors.text,
@@ -222,7 +233,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
     borderBottomColor: colors.accent,
   },
-  navLinkPressed: { backgroundColor: colors.stone, opacity: 0.9 },
+  navLinkPressed: { backgroundColor: colors.accentSoft, opacity: 0.94 },
+  navLinkHover: { backgroundColor: withAlpha(colors.gold, 0.09) },
   navText: {
     color: colors.textSoft,
     fontFamily: fonts.medium,
@@ -253,6 +265,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   accountButtonPressed: { backgroundColor: colors.accentSoft, borderColor: colors.accentDark },
+  accountButtonHover: { backgroundColor: colors.accentSoft, borderColor: withAlpha(colors.accent, 0.7) },
+  logoutHover: { backgroundColor: colors.accentSoft },
   accountButtonText: {
     color: colors.accentDark,
     fontFamily: fonts.semiBold,
@@ -300,6 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mobileButtonPressed: { backgroundColor: colors.highlight, opacity: 0.94 },
+  mobileMenuHover: { backgroundColor: colors.goldDeep },
   mobileButtonText: {
     color: colors.obsidian,
     fontFamily: fonts.semiBold,
