@@ -39,7 +39,7 @@ npm run web
 - أمر البناء: `npm run build:vercel` (يمسح كاش Metro قبل `expo export -p web` لضمان حزمة JavaScript جديدة)
 - مجلد الإخراج: `dist`
 - إعادة كتابة كل مسارات الواجهة إلى `index.html` حتى تعمل روابط Expo Router المباشرة مثل `/dashboard` و`/admin`.
-- مجلدا `api/` و`server/` مستبعدان من نشر Vercel عبر `.vercelignore`؛ تعمل الواجهة حالياً بوضع تجريبي محلي على الويب إذا تعذّر الوصول إلى API.
+- تُضمَّن مجلدات `api/` و`server/` في النشر حتى تُفعّل دوال Vercel (مثل `/api/health` والمصادقة وطلبات التوريد)؛ يبقى التخزين في الذاكرة مؤقتاً إلى أن يُوصل خادم Express بقاعدة بيانات دائمة.
 
 يضبط `.env.production` المتغير `EXPO_PUBLIC_API_URL=https://souqi-platform.vercel.app`، لذا لا حاجة إلى `localhost` أو إعداد CORS إضافي للواجهة المنشورة.
 
