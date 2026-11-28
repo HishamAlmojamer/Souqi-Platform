@@ -55,7 +55,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test server/backend.test.ts",
     "lint": "expo lint",
-    "build:vercel": "prisma generate && node -e \"const fs=require('fs');for(const p of ['.expo','node_modules/.cache/metro','node_modules/.cache/expo']){fs.rmSync(p,{recursive:true,force:true})}\" && expo export -p web"
+    "build:vercel": "npx --yes prisma@6.19.0 generate && node -e \"const fs=require('fs');for(const p of ['.expo','node_modules/.cache/metro','node_modules/.cache/expo']){fs.rmSync(p,{recursive:true,force:true})}\" && expo export -p web"
   },
   "private": true
 }
