@@ -7,17 +7,26 @@ import { disconnectDatabase } from "./db";
 import { errorHandler } from "./http";
 import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
+import { escrowRouter } from "./routes/escrow";
 import { industriesRouter } from "./routes/industries";
+import { inspectionsRouter } from "./routes/inspections";
+import { messagesRouter } from "./routes/messages";
+import { notificationsRouter } from "./routes/notifications";
 import { organizationsRouter } from "./routes/organizations";
+import { productsRouter } from "./routes/products";
 import { purchaseOrdersRouter } from "./routes/purchaseOrders";
 import { quotesRouter } from "./routes/quotes";
 import { rfqsRouter } from "./routes/rfqs";
+import { shipmentsRouter } from "./routes/shipments";
 import { suppliersRouter } from "./routes/suppliers";
 
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("json replacer", (_key: string, value: unknown) =>
+    typeof value === "bigint" ? value.toString() : value,
+  );
   app.use(helmet());
   app.use(
     cors({
@@ -55,6 +64,12 @@ export function createApp() {
   app.use("/api", quotesRouter);
   app.use("/api", purchaseOrdersRouter);
   app.use("/api", suppliersRouter);
+  app.use("/api", productsRouter);
+  app.use("/api", inspectionsRouter);
+  app.use("/api", messagesRouter);
+  app.use("/api", escrowRouter);
+  app.use("/api", shipmentsRouter);
+  app.use("/api", notificationsRouter);
   app.use("/api", adminRouter);
 
   app.use((_req, res) => {
@@ -69,7 +84,7 @@ export function createApp() {
   return app;
 }
 
-const app = createApp();
+export const app = createApp();
 
 if (require.main === module) {
   const server = app.listen(config.port, () => {

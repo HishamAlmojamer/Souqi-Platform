@@ -34,17 +34,18 @@ const sortLabels: Record<SortOption, string> = {
 export default function SuppliersDashboardScreen() {
   const { isDesktop, gutter } = useResponsive();
   const wide = isDesktop;
-  const suppliersQuery = useApiQuery<SuppliersPayload>('/api/suppliers?pageSize=100');
+  const [search, setSearch] = useState('');
+  const [country, setCountry] = useState<CountryFilter>('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>('name');
+  const suppliersQuery = useApiQuery<SuppliersPayload>(
+    `/api/suppliers?pageSize=100&verifiedOnly=${verifiedOnly ? 'true' : 'false'}${search.trim() ? `&q=${encodeURIComponent(search.trim())}` : ''}`,
+  );
   const suppliers = useMemo(() => suppliersQuery.data?.suppliers ?? [], [suppliersQuery.data?.suppliers]);
   const capabilities = suppliers.map((supplier) => supplierCapabilities(supplier.supplierProfile));
   const scores = capabilities.flatMap((item) => item.score === null ? [] : [item.score]);
   const avgScore = scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
   const withLeadTime = suppliers.filter((supplier) => supplier.supplierProfile?.leadTimeDays != null).length;
-
-  const [search, setSearch] = useState('');
-  const [country, setCountry] = useState<CountryFilter>('all');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sort, setSort] = useState<SortOption>('name');
 
   const countries = useMemo(() => Array.from(new Set(suppliers.map((supplier) => supplier.countryCode))).sort(), [suppliers]);
   const decorated = useMemo(() => suppliers.map((supplier) => ({
@@ -63,7 +64,7 @@ export default function SuppliersDashboardScreen() {
         ...capability.specialties,
       ].join(' ').toLocaleLowerCase().includes(query);
       const matchesCountry = country === 'all' || supplier.countryCode === country;
-      const matchesVerification = !verifiedOnly || supplier.supplierProfile?.verificationStatus === 'APPROVED';
+      const matchesVerification = !verifiedOnly || ['APPROVED', 'AUDITED_SUPPLIER'].includes(supplier.supplierProfile?.verificationStatus ?? '');
       return matchesQuery && matchesCountry && matchesVerification;
     });
     return result.sort((left, right) => {
@@ -189,9 +190,9 @@ export default function SuppliersDashboardScreen() {
                             {countryLabels[supplier.countryCode] ?? supplier.countryCode} · {capability.category}
                           </Text>
                         </View>
-                        <View style={[styles.badge, supplier.supplierProfile?.verificationStatus === 'APPROVED' ? styles.badgeVerified : styles.badgeDraft]}>
-                          <Text style={[styles.badgeText, supplier.supplierProfile?.verificationStatus === 'APPROVED' && styles.badgeTextVerified]}>
-                            {supplier.supplierProfile?.verificationStatus === 'APPROVED' ? 'موثق' : 'قيد المراجعة'}
+                        <View style={[styles.badge, ['APPROVED', 'AUDITED_SUPPLIER'].includes(supplier.supplierProfile?.verificationStatus ?? '') ? styles.badgeVerified : styles.badgeDraft]}>
+                          <Text style={[styles.badgeText, ['APPROVED', 'AUDITED_SUPPLIER'].includes(supplier.supplierProfile?.verificationStatus ?? '') && styles.badgeTextVerified]}>
+                            {supplier.supplierProfile?.verificationStatus === 'AUDITED_SUPPLIER' ? 'مصنع مدقق' : supplier.supplierProfile?.verificationStatus === 'APPROVED' ? 'موثق' : 'قيد المراجعة'}
                           </Text>
                         </View>
                       </View>
@@ -215,11 +216,18 @@ export default function SuppliersDashboardScreen() {
 
                       <View style={styles.cardFooter}>
                         <Text style={styles.footerLabel}>{supplier.status === 'ACTIVE' ? 'نشط' : supplier.status}</Text>
-                        <Link href={'/rfq/new' as any} asChild>
-                          <MotionPressable accessibilityRole="button" style={styles.primaryButton}>
-                            <Text style={styles.primaryButtonText}>طلب عرض جديد</Text>
-                          </MotionPressable>
-                        </Link>
+                        <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+                          <Link href={`/suppliers/${supplier.id}` as any} asChild>
+                            <MotionPressable accessibilityRole="link" style={[styles.primaryButton, { backgroundColor: colors.goldLight }]}>
+                              <Text style={[styles.primaryButtonText, { color: colors.goldDeep }]}>ملف المصنع</Text>
+                            </MotionPressable>
+                          </Link>
+                          <Link href={'/rfq/new' as any} asChild>
+                            <MotionPressable accessibilityRole="button" style={styles.primaryButton}>
+                              <Text style={styles.primaryButtonText}>طلب عرض جديد</Text>
+                            </MotionPressable>
+                          </Link>
+                        </View>
                       </View>
                     </View>
                     </Stagger>

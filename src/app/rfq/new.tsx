@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/state/AuthContext';
 
 type FormValues = Record<string, string>;
+type AttachmentDraft = { label: string; classification: 'DESIGN' | 'CAD' | 'PDF_SPEC' | 'IMAGE' | 'BRAND_GUIDE' | 'TECHNICAL_SHEET' | 'OTHER' };
 type IndustriesPayload = { industries: ApiIndustry[] };
 type VersionsPayload = { versions: ApiSchemaVersion[] };
 type CreatePayload = { rfq: ApiRfq };
@@ -37,10 +38,18 @@ export default function NewRFQScreen() {
   const [currency, setCurrency] = useState('SAR');
   const [destination, setDestination] = useState('الرياض، السعودية');
   const [targetDate, setTargetDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [targetUnitPrice, setTargetUnitPrice] = useState('');
+  const [incoterm, setIncoterm] = useState<'EXW' | 'FOB' | 'CIF' | 'DDP'>('FOB');
+  const [brandingRequirements, setBrandingRequirements] = useState('');
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const [attachmentLabel, setAttachmentLabel] = useState('');
+  const [attachmentClassification, setAttachmentClassification] = useState<AttachmentDraft['classification']>('PDF_SPEC');
   const [error, setError] = useState('');
   const [formValues, setFormValues] = useState<FormValues>({});
   const createRfq = useApiMutation<CreatePayload>();
   const publishRfq = useApiMutation<{ rfq: ApiRfq }>();
+  const addAttachment = useApiMutation<{ attachment: { id: string } }>();
 
   const selectedIndustryId = industryId || industries[0]?.id || '';
   const activeIndustry = industries.find((item) => item.id === selectedIndustryId) ?? industries[0];
@@ -81,6 +90,11 @@ export default function NewRFQScreen() {
     }
     if (!/^[A-Za-z]{3}$/.test(currency.trim())) {
       setError('يرجى إدخال رمز عملة من ثلاثة أحرف، مثل SAR.');
+      return;
+    }
+    const parsedTarget = targetUnitPrice.trim() ? Number(targetUnitPrice) : null;
+    if (parsedTarget !== null && (!Number.isSafeInteger(parsedTarget) || parsedTarget <= 0)) {
+      setError('يرجى إدخال سعر مستهدف صحيح بالهللات.');
       return;
     }
     if (activeOrganization?.type !== 'BUYER') {
@@ -125,14 +139,32 @@ export default function NewRFQScreen() {
           industryId: activeIndustry.id,
           schemaVersionId: activeVersion.id,
           title: title.trim(),
+          category: category.trim() || undefined,
           quantity: parsedQuantity,
           unit: unit.trim(),
           currency: currency.trim().toUpperCase(),
+          targetUnitPriceCents: parsedTarget,
+          incoterm,
+          brandingRequirements: brandingRequirements.trim() || undefined,
           destination: destination.trim(),
           targetDate: parsedTargetDate,
           requirements,
         },
       });
+      for (const [index, attachment] of attachments.entries()) {
+        await addAttachment.mutateAsync({
+          path: `/api/rfqs/${created.rfq.id}/attachments`,
+          body: {
+            label: attachment.label,
+            objectKey: `${activeOrganization.id}/rfq/${created.rfq.id}/attachment-${index + 1}`,
+            checksum: `sha256-demo-${Date.now()}-${index}`,
+            mimeType: attachment.classification === 'CAD' ? 'application/vnd.autocad.dwg' : 'application/octet-stream',
+            sizeBytes: 1024,
+            classification: attachment.classification,
+            confidentiality: 'INVITED_SUPPLIERS',
+          },
+        });
+      }
       if (publish && hasPermission('rfq.publish')) {
         await publishRfq.mutateAsync({
           path: `/api/rfqs/${created.rfq.id}/status`,
@@ -279,6 +311,106 @@ export default function NewRFQScreen() {
                 />
               </View>
 
+              <View style={styles.basicFields}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>الفئة (اختياري)</Text>
+                  <TextInput
+                    accessibilityLabel="الفئة"
+                    value={category}
+                    onChangeText={setCategory}
+                    style={styles.input}
+                    placeholder="مثال: ملابس جاهزة"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>السعر المستهدف بالهللات (اختياري)</Text>
+                  <TextInput
+                    accessibilityLabel="السعر المستهدف"
+                    value={targetUnitPrice}
+                    onChangeText={setTargetUnitPrice}
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="مثال: 4500"
+                    placeholderTextColor="#8A948D"
+                    textAlign="right"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>شرط التجارة (Incoterms)</Text>
+                <View style={styles.choiceList}>
+                  {(['EXW', 'FOB', 'CIF', 'DDP'] as const).map((term) => (
+                    <MotionPressable
+                      key={term}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: incoterm === term }}
+                      onPress={() => setIncoterm(term)}
+                      style={[styles.choiceButton, incoterm === term && styles.choiceButtonSelected]}
+                    >
+                      <Text style={[styles.choiceText, incoterm === term && styles.choiceTextSelected]}>{term}</Text>
+                    </MotionPressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>متطلبات العلامة والتغليف (اختياري)</Text>
+                <TextInput
+                  accessibilityLabel="متطلبات العلامة والتغليف"
+                  value={brandingRequirements}
+                  onChangeText={setBrandingRequirements}
+                  style={[styles.input, styles.textArea]}
+                  multiline
+                  placeholder="الشعار، الألوان، التعبئة، تعليمات التغليف..."
+                  placeholderTextColor="#8A948D"
+                  textAlign="right"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>المرفقات الهندسية (بيانات ملف)</Text>
+                <Text style={styles.schemaNote}>أضف اسم المرفق ونوعه؛ سيُحفظ مفتاح الملف ضمن مساحة مؤسستك.</Text>
+                <TextInput
+                  accessibilityLabel="اسم المرفق"
+                  value={attachmentLabel}
+                  onChangeText={setAttachmentLabel}
+                  style={styles.input}
+                  placeholder="مثال: مواصفات القماش.pdf"
+                  placeholderTextColor="#8A948D"
+                  textAlign="right"
+                />
+                <View style={styles.choiceList}>
+                  {(['DESIGN', 'CAD', 'PDF_SPEC', 'IMAGE', 'BRAND_GUIDE', 'TECHNICAL_SHEET', 'OTHER'] as const).map((kind) => (
+                    <MotionPressable
+                      key={kind}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: attachmentClassification === kind }}
+                      onPress={() => setAttachmentClassification(kind)}
+                      style={[styles.choiceButton, attachmentClassification === kind && styles.choiceButtonSelected]}
+                    >
+                      <Text style={[styles.choiceText, attachmentClassification === kind && styles.choiceTextSelected]}>{kind}</Text>
+                    </MotionPressable>
+                  ))}
+                </View>
+                <MotionPressable
+                  accessibilityRole="button"
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    if (!attachmentLabel.trim()) return;
+                    setAttachments((current) => [...current, { label: attachmentLabel.trim(), classification: attachmentClassification }]);
+                    setAttachmentLabel('');
+                  }}
+                >
+                  <Text style={styles.secondaryButtonText}>إضافة المرفق</Text>
+                </MotionPressable>
+                {attachments.map((attachment, index) => (
+                  <Text key={`${attachment.label}-${index}`} style={styles.schemaNote}>• {attachment.label} ({attachment.classification})</Text>
+                ))}
+              </View>
+
               <View style={styles.divider} />
 
               {activeVersion ? (
@@ -400,6 +532,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   },
+  textArea: { minHeight: 90, textAlignVertical: 'top' },
   choiceList: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
   choiceButton: { borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 },
   choiceButtonSelected: { borderColor: colors.greenDark, backgroundColor: colors.greenLight },

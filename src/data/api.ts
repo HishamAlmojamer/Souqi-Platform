@@ -37,11 +37,91 @@ export type ApiSupplierProfile = {
   minOrderQuantity: number | null;
   leadTimeDays: number | null;
   website: string | null;
+  licenseNumber?: string | null;
+  floorAreaSqm?: number | null;
+  productionLines?: number | null;
+  rdStaffCount?: number | null;
+  annualCapacity?: string | null;
+  certifications?: string[];
 };
 
 export type ApiSupplier = ApiOrganization & {
   supplierProfile: ApiSupplierProfile | null;
+  products?: ApiProduct[];
+  inspectionReports?: ApiInspectionReport[];
   _count?: { memberships?: number; quotes?: number };
+};
+
+export type ApiProductMedia = {
+  id: string;
+  productId: string;
+  objectKey: string;
+  kind: 'IMAGE' | 'VIDEO' | 'CAD' | 'PDF';
+  caption: string | null;
+  sortOrder: number;
+  mimeType: string | null;
+  createdAt: string;
+};
+
+export type ApiProduct = {
+  id: string;
+  supplierOrgId: string;
+  industryId: string | null;
+  sku: string | null;
+  title: string;
+  description: string;
+  category: string;
+  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
+  source: 'CATALOG' | 'CUSTOM' | 'RFQ';
+  priceCents: string | null;
+  currency: string;
+  minOrderQuantity: number;
+  leadTimeDays: number | null;
+  certifications: string[];
+  customizationNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  supplierOrg?: Pick<ApiOrganization, 'id' | 'displayName' | 'legalName' | 'countryCode'> & {
+    supplierProfile?: Pick<ApiSupplierProfile, 'verificationStatus' | 'minOrderQuantity' | 'leadTimeDays' | 'capabilities'> | null;
+  } | null;
+  media?: ApiProductMedia[];
+};
+
+export type ApiInspectionReport = {
+  id: string;
+  organizationId: string;
+  kind: 'FACTORY_AUDIT' | 'PRE_SHIPMENT' | 'SAMPLE' | 'LABORATORY' | 'DOCUMENT';
+  status: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  issuer: string;
+  reportNumber: string | null;
+  scope: string | null;
+  summary: unknown;
+  score: number | null;
+  objectKey: string;
+  checksum: string;
+  mimeType: string;
+  sizeBytes: number;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  organization?: Pick<ApiOrganization, 'id' | 'displayName'> | null;
+};
+
+export type ApiRfqAttachment = {
+  id: string;
+  rfqId: string;
+  organizationId: string;
+  objectKey: string;
+  label: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksum: string;
+  classification: string;
+  confidentiality: string;
+  scanStatus: 'PENDING' | 'CLEAN' | 'INFECTED';
+  createdAt: string;
 };
 
 export type SupplierCapabilities = {
@@ -64,6 +144,10 @@ export type ApiRfq = {
   destination: string;
   targetDate: string | null;
   requirements: Record<string, unknown>;
+  category?: string | null;
+  targetUnitPriceCents?: string | null;
+  incoterm?: 'EXW' | 'FOB' | 'CIF' | 'DDP' | null;
+  brandingRequirements?: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -72,7 +156,8 @@ export type ApiRfq = {
   schemaVersion?: ApiSchemaVersion | null;
   quotes?: ApiQuoteSummary[];
   invitations?: ApiRfqInvitation[];
-  _count?: { invitations?: number; quotes?: number };
+  attachments?: ApiRfqAttachment[];
+  _count?: { invitations?: number; quotes?: number; attachments?: number };
 };
 
 export type ApiQuoteSummary = {
@@ -124,9 +209,120 @@ export type ApiNotification = {
   title: string;
   body: string;
   createdAt: string;
+  readAt?: string | null;
   read: boolean;
   href: string | null;
-  kind: 'rfq' | 'quote' | 'invitation' | 'order' | 'sample' | 'system';
+  kind: string;
+};
+
+export type ApiMessageThread = {
+  id: string;
+  organizationId: string;
+  participantOrgIds: string[];
+  type: 'PRODUCT' | 'RFQ' | 'QUOTE' | 'PURCHASE_ORDER' | 'SAMPLE' | 'INSPECTION' | 'ESCROW' | 'SHIPMENT' | 'SUPPORT';
+  status: 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  subject: string;
+  rfqId: string | null;
+  quoteId: string | null;
+  purchaseOrderId: string | null;
+  sampleId: string | null;
+  inspectionReportId: string | null;
+  escrowHoldId: string | null;
+  shipmentId: string | null;
+  lastMessageAt: string;
+  createdAt: string;
+  messages?: ApiMessage[];
+  _count?: { messages: number };
+};
+
+export type ApiOfferCard = {
+  title: string;
+  quantity: number;
+  unitPriceCents: number;
+  leadTimeDays: number;
+  incoterm: 'EXW' | 'FOB' | 'CIF' | 'DDP';
+  currency: string;
+  notes?: string;
+};
+
+export type ApiMessage = {
+  id: string;
+  threadId: string;
+  senderAccountId: string;
+  senderOrgId: string;
+  body: string;
+  offerJson: ApiOfferCard | null;
+  idempotencyKey: string | null;
+  editedAt: string | null;
+  createdAt: string;
+  sender?: { id: string; fullName: string; companyName: string | null } | null;
+};
+
+export type ApiEscrowCondition = {
+  id: string;
+  escrowHoldId: string;
+  kind: 'PRODUCTION_STARTED' | 'SAMPLE_APPROVED' | 'INSPECTION_APPROVED' | 'MILESTONE_DONE' | 'SHIPMENT_DELIVERED' | 'DOCUMENT_APPROVED' | 'MANUAL';
+  title: string;
+  description: string | null;
+  percentage: number;
+  status: 'PENDING' | 'MET' | 'WAIVED';
+  metAt: string | null;
+  createdAt: string;
+};
+
+export type ApiEscrowHold = {
+  id: string;
+  purchaseOrderId: string;
+  buyerOrgId: string;
+  supplierOrgId: string;
+  amountCents: string;
+  currency: string;
+  status: 'AWAITING_PAYMENT' | 'FUNDS_HELD_IN_ESCROW' | 'PARTIAL_RELEASED' | 'COMPLETED' | 'DISPUTED' | 'REFUNDED' | 'CANCELLED';
+  mode: 'DEMO' | 'LIVE';
+  fundedAt: string | null;
+  releasedAt: string | null;
+  createdAt: string;
+  conditions?: ApiEscrowCondition[];
+  ledger?: ApiEscrowLedgerEntry[];
+};
+
+export type ApiEscrowLedgerEntry = {
+  id: string;
+  escrowHoldId: string;
+  type: string;
+  amountCents: string;
+  balanceAfterCents: string;
+  currency: string;
+  idempotencyKey: string;
+  actorAccountId: string | null;
+  createdAt: string;
+};
+
+export type ApiShipmentEvent = {
+  id: string;
+  shipmentId: string;
+  status: string;
+  occurredAt: string;
+  location: string | null;
+  note: string | null;
+  source: string;
+  createdAt: string;
+};
+
+export type ApiShipment = {
+  id: string;
+  purchaseOrderId: string;
+  organizationId: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  origin: string | null;
+  destination: string | null;
+  status: 'CREATED' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'EXCEPTION';
+  documentObjectKey: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  createdAt: string;
+  events?: ApiShipmentEvent[];
 };
 
 export type ApiQuote = ApiQuoteSummary & {
@@ -217,13 +413,14 @@ export function supplierCapabilities(profile: ApiSupplierProfile | null | undefi
   };
 }
 
-export function useApiQuery<T>(path: string | null, staleTime = 30_000) {
+export function useApiQuery<T>(path: string | null, staleTime = 30_000, refetchInterval: number | false = false) {
   const { apiFetch, token } = useAuth();
   return useQuery<T, Error>({
     queryKey: ['api', path, Boolean(token)],
     queryFn: () => apiFetch<T>(path as string),
     enabled: Boolean(path && token),
     staleTime,
+    refetchInterval,
     retry: 1,
   });
 }
@@ -282,17 +479,73 @@ export const PO_STATUS: Record<string, { label: string; tone: Tone }> = {
 
 export const MILESTONE_STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING: { label: 'لم يبدأ', tone: 'muted' },
+  RAW_MATERIALS_READY: { label: 'المواد الخام جاهزة', tone: 'blue' },
+  IN_PRODUCTION: { label: 'قيد الإنتاج', tone: 'blue' },
   ACTIVE: { label: 'جارٍ', tone: 'blue' },
+  QUALITY_CHECK: { label: 'فحص الجودة', tone: 'amber' },
+  PACKAGING: { label: 'التغليف', tone: 'amber' },
+  READY_TO_SHIP: { label: 'جاهز للشحن', tone: 'green' },
   DONE: { label: 'مكتمل', tone: 'green' },
   BLOCKED: { label: 'متوقف', tone: 'amber' },
 };
 
+export const VERIFICATION_STATUS: Record<string, { label: string; tone: Tone }> = {
+  UNVERIFIED: { label: 'غير موثق', tone: 'muted' },
+  DRAFT: { label: 'مسودة', tone: 'muted' },
+  SUBMITTED: { label: 'قيد الاستلام', tone: 'blue' },
+  IN_REVIEW: { label: 'قيد المراجعة', tone: 'amber' },
+  PENDING_AUDIT: { label: 'بانتظار التدقيق', tone: 'amber' },
+  APPROVED: { label: 'معتمد', tone: 'green' },
+  AUDITED_SUPPLIER: { label: 'مصنع مدقق', tone: 'green' },
+  REJECTED: { label: 'مرفوض', tone: 'amber' },
+  SUSPENDED: { label: 'معلّق', tone: 'muted' },
+};
+
+export const ESCROW_STATUS: Record<string, { label: string; tone: Tone }> = {
+  AWAITING_PAYMENT: { label: 'بانتظار التمويل', tone: 'amber' },
+  FUNDS_HELD_IN_ESCROW: { label: 'المبلغ محجوز', tone: 'green' },
+  PARTIAL_RELEASED: { label: 'تحرير جزئي', tone: 'blue' },
+  COMPLETED: { label: 'مكتمل', tone: 'green' },
+  DISPUTED: { label: 'نزاع', tone: 'amber' },
+  REFUNDED: { label: 'مسترد', tone: 'muted' },
+  CANCELLED: { label: 'ملغي', tone: 'muted' },
+};
+
+export const SHIPMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  CREATED: { label: 'تم الإنشاء', tone: 'muted' },
+  PICKED_UP: { label: 'تم الاستلام', tone: 'blue' },
+  IN_TRANSIT: { label: 'في الطريق', tone: 'blue' },
+  DELIVERED: { label: 'تم التسليم', tone: 'green' },
+  EXCEPTION: { label: 'استثناء', tone: 'amber' },
+};
+
+export const INSPECTION_STATUS: Record<string, { label: string; tone: Tone }> = {
+  DRAFT: { label: 'مسودة', tone: 'muted' },
+  SUBMITTED: { label: 'مقدّم', tone: 'blue' },
+  IN_REVIEW: { label: 'قيد المراجعة', tone: 'amber' },
+  APPROVED: { label: 'معتمد', tone: 'green' },
+  REJECTED: { label: 'مرفوض', tone: 'amber' },
+  EXPIRED: { label: 'منتهي', tone: 'muted' },
+};
+
+export const PRODUCT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  DRAFT: { label: 'مسودة', tone: 'muted' },
+  ACTIVE: { label: 'نشط', tone: 'green' },
+  PAUSED: { label: 'موقوف', tone: 'amber' },
+  ARCHIVED: { label: 'مؤرشف', tone: 'muted' },
+};
+
 export const SAMPLE_STATUS: Record<string, { label: string; tone: Tone }> = {
   REQUESTED: { label: 'مطلوبة', tone: 'muted' },
+  QUOTED: { label: 'تم تسعيرها', tone: 'blue' },
+  PAID: { label: 'مدفوعة', tone: 'green' },
+  IN_PRODUCTION: { label: 'قيد الإنتاج', tone: 'blue' },
   IN_PREPARATION: { label: 'قيد التجهيز', tone: 'blue' },
   SHIPPED: { label: 'تم الشحن', tone: 'blue' },
+  DELIVERED: { label: 'تم التسليم', tone: 'green' },
   RECEIVED: { label: 'تم الاستلام', tone: 'amber' },
   REVISION_REQUESTED: { label: 'مطلوب تعديل', tone: 'amber' },
+  REVISION_NEEDED: { label: 'يحتاج تعديل', tone: 'amber' },
   APPROVED: { label: 'معتمدة', tone: 'green' },
   REJECTED: { label: 'مرفوضة', tone: 'muted' },
 };

@@ -8,6 +8,7 @@ import { validateRequirements } from "../domain/rules";
 import { assertTransition, RFQ_TRANSITIONS } from "../domain/transitions";
 import { ApiError, asyncRoute, getPagination, routeParam } from "../http";
 import {
+  createRfqAttachmentSchema,
   createRfqSchema,
   inviteSuppliersSchema,
   listRfqsQuerySchema,
@@ -152,6 +153,7 @@ rfqsRouter.get(
             submittedAt: true,
           },
         },
+        attachments: true,
       },
     });
     if (!rfq) {
@@ -396,5 +398,111 @@ rfqsRouter.get(
       orderBy: { sentAt: "desc" },
     });
     res.json({ invitations });
+  }),
+);
+
+async function rfqAttachmentAccess(req: Parameters<typeof requireAccount>[0], rfqId: string) {
+  const account = requireAccount(req);
+  const rfq = await prisma.rfq.findUnique({
+    where: { id: rfqId },
+    select: {
+      id: true,
+      buyerOrgId: true,
+      status: true,
+      invitations: { select: { supplierOrgId: true } },
+    },
+  });
+  if (!rfq) {
+    throw new ApiError(404, "طلب العرض غير موجود", "NOT_FOUND");
+  }
+  const myOrgIds = account.isPlatformAdmin
+    ? []
+    : (
+        await prisma.membership.findMany({
+          where: { accountId: account.id, status: "ACTIVE" },
+          select: { organizationId: true },
+        })
+      ).map((membership) => membership.organizationId);
+  const canView =
+    account.isPlatformAdmin ||
+    myOrgIds.includes(rfq.buyerOrgId) ||
+    rfq.invitations.some((invitation) => myOrgIds.includes(invitation.supplierOrgId));
+  if (!canView) {
+    throw new ApiError(403, "غير مسموح لك بعرض مرفقات هذا الطلب", "FORBIDDEN");
+  }
+  return { account, rfq, myOrgIds };
+}
+
+rfqsRouter.get(
+  "/rfqs/:id/attachments",
+  asyncRoute(async (req, res) => {
+    const { rfq } = await rfqAttachmentAccess(req, routeParam(req.params.id));
+    const attachments = await prisma.rfqAttachment.findMany({
+      where: { rfqId: rfq.id },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ attachments });
+  }),
+);
+
+rfqsRouter.post(
+  "/rfqs/:id/attachments",
+  asyncRoute(async (req, res) => {
+    const input = createRfqAttachmentSchema.parse(req.body);
+    const { account, rfq, myOrgIds } = await rfqAttachmentAccess(req, routeParam(req.params.id));
+    if (rfq.status !== "DRAFT") {
+      throw new ApiError(409, "يمكن إضافة المرفقات للمسودة فقط", "RFQ_NOT_EDITABLE");
+    }
+    if (!account.isPlatformAdmin && !myOrgIds.includes(rfq.buyerOrgId)) {
+      throw new ApiError(403, "فقط صاحب الطلب يمكنه إضافة المرفقات", "FORBIDDEN");
+    }
+    const organizationId = account.isPlatformAdmin ? rfq.buyerOrgId : myOrgIds[0];
+    if (!input.objectKey.startsWith(`${organizationId}/`)) {
+      throw new ApiError(400, "مفتاح الملف يجب أن يبدأ بمعرّف المؤسسة", "INVALID_OBJECT_KEY");
+    }
+    const attachment = await prisma.rfqAttachment.create({
+      data: {
+        ...input,
+        rfqId: rfq.id,
+        organizationId,
+        uploadedByAccountId: account.id,
+      },
+    });
+    await writeAudit({
+      actorAccountId: account.id,
+      organizationId,
+      action: "RFQ_ATTACHMENT_ADDED",
+      resourceType: "RfqAttachment",
+      resourceId: attachment.id,
+    });
+    res.status(201).json({ attachment });
+  }),
+);
+
+rfqsRouter.delete(
+  "/rfqs/:id/attachments/:attachmentId",
+  asyncRoute(async (req, res) => {
+    const { account, rfq, myOrgIds } = await rfqAttachmentAccess(req, routeParam(req.params.id));
+    if (rfq.status !== "DRAFT") {
+      throw new ApiError(409, "يمكن حذف المرفقات من المسودة فقط", "RFQ_NOT_EDITABLE");
+    }
+    if (!account.isPlatformAdmin && !myOrgIds.includes(rfq.buyerOrgId)) {
+      throw new ApiError(403, "فقط صاحب الطلب يمكنه حذف المرفقات", "FORBIDDEN");
+    }
+    const attachment = await prisma.rfqAttachment.findFirst({
+      where: { id: routeParam(req.params.attachmentId), rfqId: rfq.id },
+    });
+    if (!attachment) {
+      throw new ApiError(404, "المرفق غير موجود", "NOT_FOUND");
+    }
+    await prisma.rfqAttachment.delete({ where: { id: attachment.id } });
+    await writeAudit({
+      actorAccountId: account.id,
+      organizationId: attachment.organizationId,
+      action: "RFQ_ATTACHMENT_REMOVED",
+      resourceType: "RfqAttachment",
+      resourceId: attachment.id,
+    });
+    res.json({ removed: true });
   }),
 );

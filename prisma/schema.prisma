@@ -45,10 +45,13 @@ enum MembershipStatus {
 }
 
 enum VerificationStatus {
+  UNVERIFIED
   DRAFT
   SUBMITTED
   IN_REVIEW
+  PENDING_AUDIT
   APPROVED
+  AUDITED_SUPPLIER
   REJECTED
   SUSPENDED
 
@@ -101,10 +104,15 @@ enum PurchaseOrderStatus {
 
 enum SampleStatus {
   REQUESTED
+  QUOTED
+  PAID
+  IN_PRODUCTION
   IN_PREPARATION
   SHIPPED
+  DELIVERED
   RECEIVED
   REVISION_REQUESTED
+  REVISION_NEEDED
   APPROVED
   REJECTED
 
@@ -113,7 +121,12 @@ enum SampleStatus {
 
 enum MilestoneStatus {
   PENDING
+  RAW_MATERIALS_READY
+  IN_PRODUCTION
   ACTIVE
+  QUALITY_CHECK
+  PACKAGING
+  READY_TO_SHIP
   DONE
   BLOCKED
 
@@ -128,6 +141,119 @@ enum ScanStatus {
   @@map("scan_status")
 }
 
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+
+  @@map("product_status")
+}
+
+enum ProductSource {
+  CATALOG
+  CUSTOM
+  RFQ
+
+  @@map("product_source")
+}
+
+enum InspectionKind {
+  FACTORY_AUDIT
+  PRE_SHIPMENT
+  SAMPLE
+  LABORATORY
+  DOCUMENT
+
+  @@map("inspection_kind")
+}
+
+enum InspectionReportStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+
+  @@map("inspection_report_status")
+}
+
+enum MessageThreadType {
+  PRODUCT
+  RFQ
+  QUOTE
+  PURCHASE_ORDER
+  SAMPLE
+  INSPECTION
+  ESCROW
+  SHIPMENT
+  SUPPORT
+
+  @@map("message_thread_type")
+}
+
+enum MessageThreadStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+
+  @@map("message_thread_status")
+}
+
+enum EscrowHoldStatus {
+  AWAITING_PAYMENT
+  FUNDS_HELD_IN_ESCROW
+  PARTIAL_RELEASED
+  COMPLETED
+  DISPUTED
+  REFUNDED
+  CANCELLED
+
+  @@map("escrow_hold_status")
+}
+
+enum EscrowConditionKind {
+  PRODUCTION_STARTED
+  SAMPLE_APPROVED
+  INSPECTION_APPROVED
+  MILESTONE_DONE
+  SHIPMENT_DELIVERED
+  DOCUMENT_APPROVED
+  MANUAL
+
+  @@map("escrow_condition_kind")
+}
+
+enum EscrowConditionStatus {
+  PENDING
+  MET
+  WAIVED
+
+  @@map("escrow_condition_status")
+}
+
+enum EscrowLedgerEntryType {
+  HOLD_CREATED
+  CONDITION_MET
+  PARTIAL_RELEASED
+  RELEASED
+  REFUNDED
+  DISPUTED
+
+  @@map("escrow_ledger_entry_type")
+}
+
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  EXCEPTION
+
+  @@map("shipment_status")
+}
+
 model PlatformAccount {
   id              String              @id @default(uuid()) @db.Uuid
   fullName        String              @map("full_name")
@@ -138,13 +264,23 @@ model PlatformAccount {
   isPlatformAdmin Boolean             @default(false) @map("is_platform_admin")
   createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  memberships      Membership[]
-  createdRfqs      Rfq[]           @relation("CreatedRFQs")
-  createdPos       PurchaseOrder[] @relation("CreatedPurchaseOrders")
-  decidedSamples   Sample[]        @relation("DecidedSamples")
-  uploadedEvidence EvidenceFile[]  @relation("UploadedEvidence")
-  auditEvents      AuditEvent[]    @relation("ActorAuditEvents")
-  refreshTokens    RefreshToken[]
+  memberships       Membership[]
+  createdRfqs       Rfq[]           @relation("CreatedRFQs")
+  createdPos        PurchaseOrder[] @relation("CreatedPurchaseOrders")
+  decidedSamples    Sample[]        @relation("DecidedSamples")
+  uploadedEvidence  EvidenceFile[]  @relation("UploadedEvidence")
+  auditEvents       AuditEvent[]    @relation("ActorAuditEvents")
+  refreshTokens     RefreshToken[]
+  createdProducts   Product[]       @relation("CreatedProducts")
+  uploadedRfqFiles  RfqAttachment[] @relation("UploadedRfqAttachments")
+  verifiedReports   InspectionReport[] @relation("VerifiedInspectionReports")
+  sentMessages      Message[]       @relation("SentMessages")
+  readMessages      MessageRead[]   @relation("ReadMessages")
+  createdEscrows    EscrowHold[]    @relation("CreatedEscrowHolds")
+  metConditions     EscrowCondition[] @relation("MetEscrowConditions")
+  escrowEntries     EscrowLedgerEntry[] @relation("EscrowLedgerActors")
+  createdShipments  Shipment[]      @relation("CreatedShipments")
+  notifications     Notification[]
 
   @@index([accountType])
   @@map("platform_accounts")
@@ -160,15 +296,24 @@ model Organization {
   createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  memberships     Membership[]
-  supplierProfile SupplierProfile?
-  buyerRfqs       Rfq[]            @relation("BuyerRFQs")
-  supplierInvites RfqInvitation[]  @relation("SupplierInvitations")
-  quotes          Quote[]          @relation("SupplierQuotes")
-  buyerPos        PurchaseOrder[]  @relation("BuyerPurchaseOrders")
-  supplierPos     PurchaseOrder[]  @relation("SupplierPurchaseOrders")
-  evidenceFiles   EvidenceFile[]   @relation("EvidenceFiles")
-  auditEvents     AuditEvent[]     @relation("OrganizationAuditEvents")
+  memberships       Membership[]
+  supplierProfile   SupplierProfile?
+  buyerRfqs         Rfq[]            @relation("BuyerRFQs")
+  supplierInvites   RfqInvitation[]  @relation("SupplierInvitations")
+  quotes            Quote[]          @relation("SupplierQuotes")
+  buyerPos          PurchaseOrder[]  @relation("BuyerPurchaseOrders")
+  supplierPos       PurchaseOrder[]  @relation("SupplierPurchaseOrders")
+  evidenceFiles     EvidenceFile[]   @relation("EvidenceFiles")
+  auditEvents       AuditEvent[]     @relation("OrganizationAuditEvents")
+  products          Product[]
+  rfqAttachments    RfqAttachment[]  @relation("RfqAttachmentOrg")
+  inspectionReports InspectionReport[] @relation("InspectionReportOrg")
+  messageThreads    MessageThread[]  @relation("MessageThreadOrg")
+  messages          Message[]        @relation("MessageSenderOrg")
+  buyerEscrows      EscrowHold[]     @relation("BuyerEscrowHolds")
+  supplierEscrows   EscrowHold[]     @relation("SupplierEscrowHolds")
+  shipments         Shipment[]       @relation("ShipmentOrg")
+  notifications     Notification[]
 
   @@index([type, status])
   @@map("organizations")
@@ -214,6 +359,7 @@ model Industry {
 
   schemaVersions IndustrySchemaVersion[]
   rfqs           Rfq[]
+  products       Product[]
 
   @@map("industries")
 }
@@ -242,9 +388,13 @@ model Rfq {
   schemaVersionId    String    @map("schema_version_id") @db.Uuid
   status             RFQStatus @default(DRAFT)
   title              String
+  category           String?
   quantity           Int
   unit               String
   currency           String    @db.Char(3)
+  targetUnitPriceCents BigInt? @map("target_unit_price_cents")
+  incoterm           String?
+  brandingRequirements String? @map("branding_requirements")
   destination        String
   targetDate         DateTime? @map("target_date") @db.Timestamptz(6)
   requirements       Json      @db.JsonB
@@ -261,6 +411,8 @@ model Rfq {
   invitations       RfqInvitation[]
   quotes            Quote[]
   purchaseOrder     PurchaseOrder?
+  attachments       RfqAttachment[]
+  messageThreads    MessageThread[]
 
   @@index([buyerOrgId, status, createdAt])
   @@index([industryId, status])
@@ -410,6 +562,305 @@ model EvidenceFile {
   @@index([organizationId, createdAt])
   @@index([purchaseOrderId])
   @@map("evidence_files")
+}
+
+model Product {
+  id                 String        @id @default(uuid()) @db.Uuid
+  supplierOrgId      String        @map("supplier_org_id") @db.Uuid
+  industryId         String        @map("industry_id") @db.Uuid
+  createdByAccountId String        @map("created_by_account_id") @db.Uuid
+  sku                String?
+  title              String
+  description        String
+  category           String
+  source             ProductSource @default(CATALOG)
+  status             ProductStatus @default(DRAFT)
+  specifications     Json          @map("specifications") @db.JsonB
+  unit               String
+  currency           String        @db.Char(3)
+  minOrderQuantity   Int?          @map("min_order_quantity")
+  leadTimeDays       Int?          @map("lead_time_days")
+  productionCapacity Int?          @map("production_capacity")
+  certifications     String[]      @default([])
+  priceCents         BigInt?       @map("price_cents")
+  countryCode        String?       @map("country_code") @db.Char(2)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  supplierOrg Organization    @relation(fields: [supplierOrgId], references: [id], onDelete: Cascade)
+  industry    Industry        @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  createdBy   PlatformAccount @relation("CreatedProducts", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  media       ProductMedia[]
+
+  @@index([supplierOrgId, status])
+  @@index([industryId, status])
+  @@index([category])
+  @@map("products")
+}
+
+model ProductMedia {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  objectKey String   @map("object_key")
+  checksum  String
+  mimeType  String   @map("mime_type")
+  sizeBytes Int      @map("size_bytes")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_media")
+}
+
+model InspectionReport {
+  id              String                 @id @default(uuid()) @db.Uuid
+  organizationId  String                 @map("organization_id") @db.Uuid
+  kind            InspectionKind
+  status          InspectionReportStatus @default(DRAFT)
+  issuer          String
+  reportNumber    String?                @map("report_number")
+  objectKey       String                 @map("object_key")
+  checksum        String
+  mimeType        String                 @map("mime_type")
+  sizeBytes       Int                    @map("size_bytes")
+  scope           String?
+  summary         Json?                  @db.JsonB
+  score           Int?
+  issuedAt        DateTime?              @map("issued_at") @db.Timestamptz(6)
+  expiresAt       DateTime?              @map("expires_at") @db.Timestamptz(6)
+  reviewedAt      DateTime?              @map("reviewed_at") @db.Timestamptz(6)
+  verifiedByAccountId String?            @map("verified_by_account_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization     @relation("InspectionReportOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  verifiedBy    PlatformAccount? @relation("VerifiedInspectionReports", fields: [verifiedByAccountId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([kind, status])
+  @@index([expiresAt])
+  @@map("inspection_reports")
+}
+
+model RfqAttachment {
+  id                  String     @id @default(uuid()) @db.Uuid
+  rfqId               String     @map("rfq_id") @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  uploadedByAccountId String     @map("uploaded_by_account_id") @db.Uuid
+  label               String
+  objectKey           String     @map("object_key")
+  checksum            String
+  mimeType            String     @map("mime_type")
+  sizeBytes           Int        @map("size_bytes")
+  classification      String
+  confidentiality     String     @default("INVITED_SUPPLIERS")
+  scanStatus          ScanStatus @default(PENDING) @map("scan_status")
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rfq         Rfq             @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  organization Organization    @relation("RfqAttachmentOrg", fields: [organizationId], references: [id], onDelete: Restrict)
+  uploadedBy  PlatformAccount  @relation("UploadedRfqAttachments", fields: [uploadedByAccountId], references: [id], onDelete: Restrict)
+
+  @@index([rfqId, createdAt])
+  @@map("rfq_attachments")
+}
+
+model MessageThread {
+  id            String             @id @default(uuid()) @db.Uuid
+  organizationId String            @map("organization_id") @db.Uuid
+  type          MessageThreadType
+  subject       String
+  status        MessageThreadStatus @default(OPEN)
+  rfqId         String?            @map("rfq_id") @db.Uuid
+  quoteId       String?            @map("quote_id") @db.Uuid
+  purchaseOrderId String?          @map("purchase_order_id") @db.Uuid
+  sampleId      String?            @map("sample_id") @db.Uuid
+  inspectionReportId String?       @map("inspection_report_id") @db.Uuid
+  escrowHoldId  String?            @map("escrow_hold_id") @db.Uuid
+  shipmentId    String?            @map("shipment_id") @db.Uuid
+  participantOrgIds String[]       @default([]) @map("participant_org_ids")
+  lastMessageAt DateTime           @default(now()) @map("last_message_at") @db.Timestamptz(6)
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation("MessageThreadOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  rfq          Rfq?         @relation(fields: [rfqId], references: [id], onDelete: SetNull)
+  messages     Message[]
+  reads        MessageRead[]
+
+  @@index([organizationId, status, lastMessageAt])
+  @@index([rfqId])
+  @@index([purchaseOrderId])
+  @@map("message_threads")
+}
+
+model Message {
+  id              String   @id @default(uuid()) @db.Uuid
+  threadId        String   @map("thread_id") @db.Uuid
+  senderAccountId String   @map("sender_account_id") @db.Uuid
+  senderOrgId     String   @map("sender_org_id") @db.Uuid
+  body            String
+  offerJson       Json?    @map("offer_json") @db.JsonB
+  idempotencyKey  String?  @map("idempotency_key")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  editedAt        DateTime? @map("edited_at") @db.Timestamptz(6)
+
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    PlatformAccount @relation("SentMessages", fields: [senderAccountId], references: [id], onDelete: Restrict)
+  senderOrg Organization @relation("MessageSenderOrg", fields: [senderOrgId], references: [id], onDelete: Restrict)
+  reads     MessageRead[]
+
+  @@unique([threadId, idempotencyKey])
+  @@index([threadId, createdAt])
+  @@map("messages")
+}
+
+model MessageRead {
+  id        String   @id @default(uuid()) @db.Uuid
+  threadId  String   @map("thread_id") @db.Uuid
+  messageId String?  @map("message_id") @db.Uuid
+  accountId String   @map("account_id") @db.Uuid
+  readAt    DateTime @default(now()) @map("read_at") @db.Timestamptz(6)
+
+  thread  MessageThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  message Message?        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  account PlatformAccount @relation("ReadMessages", fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, accountId])
+  @@map("message_reads")
+}
+
+model EscrowHold {
+  id                  String          @id @default(uuid()) @db.Uuid
+  purchaseOrderId     String          @unique @map("purchase_order_id") @db.Uuid
+  buyerOrgId          String          @map("buyer_org_id") @db.Uuid
+  supplierOrgId       String          @map("supplier_org_id") @db.Uuid
+  amountCents         BigInt          @map("amount_cents")
+  currency            String          @db.Char(3)
+  status              EscrowHoldStatus @default(AWAITING_PAYMENT)
+  mode                String          @default("DEMO")
+  idempotencyKey      String          @unique @map("idempotency_key")
+  createdByAccountId  String          @map("created_by_account_id") @db.Uuid
+  fundedAt            DateTime?       @map("funded_at") @db.Timestamptz(6)
+  releasedAt          DateTime?       @map("released_at") @db.Timestamptz(6)
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  buyerOrg   Organization    @relation("BuyerEscrowHolds", fields: [buyerOrgId], references: [id], onDelete: Restrict)
+  supplierOrg Organization   @relation("SupplierEscrowHolds", fields: [supplierOrgId], references: [id], onDelete: Restrict)
+  createdBy  PlatformAccount @relation("CreatedEscrowHolds", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  conditions EscrowCondition[]
+  ledger     EscrowLedgerEntry[]
+
+  @@index([buyerOrgId, status])
+  @@index([supplierOrgId, status])
+  @@map("escrow_holds")
+}
+
+model EscrowCondition {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  escrowHoldId       String                 @map("escrow_hold_id") @db.Uuid
+  kind               EscrowConditionKind
+  status             EscrowConditionStatus  @default(PENDING)
+  title              String
+  description        String?
+  percentage         Int
+  targetResourceId   String?                @map("target_resource_id") @db.Uuid
+  metAt              DateTime?              @map("met_at") @db.Timestamptz(6)
+  metByAccountId     String?                @map("met_by_account_id") @db.Uuid
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  hold   EscrowHold      @relation(fields: [escrowHoldId], references: [id], onDelete: Cascade)
+  metBy  PlatformAccount? @relation("MetEscrowConditions", fields: [metByAccountId], references: [id], onDelete: SetNull)
+
+  @@index([escrowHoldId, status])
+  @@map("escrow_conditions")
+}
+
+model EscrowLedgerEntry {
+  id               String               @id @default(uuid()) @db.Uuid
+  escrowHoldId     String               @map("escrow_hold_id") @db.Uuid
+  type             EscrowLedgerEntryType
+  amountCents      BigInt               @map("amount_cents")
+  balanceAfterCents BigInt              @map("balance_after_cents")
+  currency         String               @db.Char(3)
+  idempotencyKey   String               @unique @map("idempotency_key")
+  metadata         Json?                @db.JsonB
+  actorAccountId   String?              @map("actor_account_id") @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  hold  EscrowHold      @relation(fields: [escrowHoldId], references: [id], onDelete: Restrict)
+  actor PlatformAccount? @relation("EscrowLedgerActors", fields: [actorAccountId], references: [id], onDelete: SetNull)
+
+  @@index([escrowHoldId, createdAt])
+  @@map("escrow_ledger_entries")
+}
+
+model Shipment {
+  id                 String        @id @default(uuid()) @db.Uuid
+  purchaseOrderId    String        @map("purchase_order_id") @db.Uuid
+  organizationId     String        @map("organization_id") @db.Uuid
+  createdByAccountId String        @map("created_by_account_id") @db.Uuid
+  carrier            String?
+  trackingNumber     String?       @map("tracking_number")
+  status             ShipmentStatus @default(CREATED)
+  origin             String?
+  destination        String?
+  documentObjectKey  String?       @map("document_object_key")
+  shippedAt          DateTime?     @map("shipped_at") @db.Timestamptz(6)
+  deliveredAt        DateTime?     @map("delivered_at") @db.Timestamptz(6)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization    @relation("ShipmentOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    PlatformAccount @relation("CreatedShipments", fields: [createdByAccountId], references: [id], onDelete: Restrict)
+  events       ShipmentEvent[]
+
+  @@index([purchaseOrderId])
+  @@index([trackingNumber])
+  @@index([status])
+  @@map("shipments")
+}
+
+model ShipmentEvent {
+  id             String        @id @default(uuid()) @db.Uuid
+  shipmentId     String        @map("shipment_id") @db.Uuid
+  status         ShipmentStatus
+  location       String?
+  note           String?
+  occurredAt     DateTime      @map("occurred_at") @db.Timestamptz(6)
+  source         String        @default("MANUAL")
+  idempotencyKey String        @unique @map("idempotency_key")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
+  @@map("shipment_events")
+}
+
+model Notification {
+  id             String   @id @default(uuid()) @db.Uuid
+  accountId      String   @map("account_id") @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  kind           String
+  title          String
+  body           String
+  href           String?
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6)
+  dedupeKey      String?  @unique @map("dedupe_key")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  account      PlatformAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  organization Organization?   @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([accountId, readAt, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("notifications")
 }
 
 model AuditEvent {

@@ -37,8 +37,9 @@ export default function NotificationsScreen() {
   const markRead = useApiMutation<{ notification: ApiNotification }>();
   const markAll = useApiMutation<{ ok: boolean }>();
   const notifications = notificationsQuery.data?.notifications ?? [];
-  const unreadCount = notificationsQuery.data?.unreadCount ?? notifications.filter((item) => !item.read).length;
-  const visible = filter === 'unread' ? notifications.filter((item) => !item.read) : notifications;
+  const isRead = (item: ApiNotification) => Boolean(item.readAt ?? item.read);
+  const unreadCount = notificationsQuery.data?.unreadCount ?? notifications.filter((item) => !isRead(item)).length;
+  const visible = filter === 'unread' ? notifications.filter((item) => !isRead(item)) : notifications;
 
   const handleMarkAll = async () => {
     setActionError('');
@@ -54,8 +55,8 @@ export default function NotificationsScreen() {
     setPendingId(notificationId);
     try {
       await markRead.mutateAsync({
-        path: `/api/notifications/${notificationId}`,
-        method: 'PATCH',
+        path: `/api/notifications/${notificationId}/read`,
+        method: 'POST',
       });
     } catch (cause) {
       setActionError(errorMessage(cause));
@@ -132,7 +133,7 @@ export default function NotificationsScreen() {
             {visible.map((notification, index) => (
               <Stagger key={notification.id} index={index} baseDelay={130} step={38} translateY={8}>
               <View
-                style={[styles.notification, notification.read ? styles.notificationRead : styles.notificationUnread]}
+                style={[styles.notification, isRead(notification) ? styles.notificationRead : styles.notificationUnread]}
               >
                 <View style={styles.notificationHead}>
                   <View style={styles.kindBadge}>
@@ -143,7 +144,7 @@ export default function NotificationsScreen() {
                 <Text style={styles.notificationTitle}>{notification.title}</Text>
                 <Text style={styles.notificationBody}>{notification.body}</Text>
                 <View style={styles.actions}>
-                  {!notification.read ? (
+                  {!isRead(notification) ? (
                     <MotionPressable
                       accessibilityRole="button"
                       disabled={pendingId === notification.id}

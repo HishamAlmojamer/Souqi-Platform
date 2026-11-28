@@ -42,3 +42,29 @@ export async function writeOutbox(input: {
     },
   });
 }
+
+export async function writeNotification(input: {
+  accountId: string;
+  organizationId?: string | null;
+  kind: string;
+  title: string;
+  body: string;
+  href?: string | null;
+  dedupeKey?: string | null;
+}): Promise<void> {
+  if (input.dedupeKey) {
+    const existing = await prisma.notification.findUnique({ where: { dedupeKey: input.dedupeKey } });
+    if (existing) return;
+  }
+  await prisma.notification.create({
+    data: {
+      accountId: input.accountId,
+      organizationId: input.organizationId ?? null,
+      kind: input.kind,
+      title: input.title,
+      body: input.body,
+      href: input.href ?? null,
+      dedupeKey: input.dedupeKey ?? null,
+    },
+  });
+}

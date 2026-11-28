@@ -101,11 +101,18 @@ export default function PurchaseOrderDetailScreen() {
       <ScrollView contentContainerStyle={[styles.page, { paddingHorizontal: gutter }]} showsVerticalScrollIndicator={false}>
         <ScreenEntrance style={styles.content}>
           <View style={styles.topRow}>
-            <Link href={'/production' as any} asChild>
-              <MotionPressable accessibilityRole="button" style={styles.backButton}>
-                <Text style={styles.backButtonText}>← عودة للتنفيذ</Text>
-              </MotionPressable>
-            </Link>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Link href={{ pathname: '/orders/[id]/escrow' as any, params: { id } } as any} asChild>
+                <MotionPressable accessibilityRole="link" style={styles.backButton}>
+                  <Text style={styles.backButtonText}>الضمان والشحن ←</Text>
+                </MotionPressable>
+              </Link>
+              <Link href={'/production' as any} asChild>
+                <MotionPressable accessibilityRole="button" style={styles.backButton}>
+                  <Text style={styles.backButtonText}>← عودة للتنفيذ</Text>
+                </MotionPressable>
+              </Link>
+            </View>
             <View style={styles.headerMeta}>
               <Text style={styles.kicker}>تفاصيل أمر التوريد</Text>
               <Text style={styles.requestId}>{order?.id ?? id}</Text>

@@ -147,6 +147,11 @@ export default function RFQDetailScreen() {
                   <StatusPill label={status.label} tone={status.tone} />
                 </View>
                 <Text style={styles.summary}>{rfq.destination}</Text>
+                <Link href={{ pathname: '/rfq/[id]/messages' as any, params: { id: rfq.id } } as any} asChild>
+                  <MotionPressable accessibilityRole="link" style={styles.secondaryAction}>
+                    <Text style={styles.secondaryActionText}>افتح محادثة التفاوض</Text>
+                  </MotionPressable>
+                </Link>
                 {rfq.status === 'DRAFT' && hasPermission('rfq.manage') ? (
                   <Link
                     href={{ pathname: '/rfq/[id]/edit' as any, params: { id: rfq.id } } as any}
@@ -158,8 +163,10 @@ export default function RFQDetailScreen() {
                   </Link>
                 ) : null}
                 <View style={styles.quickFacts}>
-                  <QuickFact label="القطاع" value={rfq.industry?.nameAr ?? '—'} />
+                  <QuickFact label="القطاع" value={rfq.industry?.nameAr ?? rfq.category ?? '—'} />
                   <QuickFact label="الكمية" value={`${formatNumber(rfq.quantity)} ${rfq.unit}`} />
+                  <QuickFact label="السعر المستهدف" value={rfq.targetUnitPriceCents ? formatMoney(rfq.targetUnitPriceCents, rfq.currency) : '—'} />
+                  <QuickFact label="Incoterms" value={rfq.incoterm ?? '—'} />
                   <QuickFact label="الموعد" value={formatDate(rfq.targetDate)} />
                   <QuickFact label="تاريخ الإنشاء" value={formatDate(rfq.createdAt)} />
                 </View>
@@ -209,6 +216,22 @@ export default function RFQDetailScreen() {
                     <Text style={styles.detailLabel}>إصدار المخطط</Text>
                     <Text style={styles.detailValue}>{schemaQuery.data?.version?.version ?? '—'}</Text>
                   </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>متطلبات العلامة</Text>
+                    <Text style={styles.detailValue}>{rfq.brandingRequirements ?? '—'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>المرفقات الهندسية</Text>
+                  {(rfq.attachments ?? []).length === 0 ? (
+                    <Text style={styles.emptyDetail}>لا توجد مرفقات مضافة إلى هذه المسودة.</Text>
+                  ) : rfq.attachments?.map((attachment) => (
+                    <View key={attachment.id} style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>{attachment.label}</Text>
+                      <Text style={styles.detailValue}>{attachment.objectKey}</Text>
+                    </View>
+                  ))}
                 </View>
 
                 <View style={styles.card}>

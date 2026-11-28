@@ -1,9 +1,4 @@
-import {
-  handleMemoryRequest,
-  type ApiRequest,
-  type ApiResponse,
-} from '../server/memory-api';
+import handler from './_app';
 
-export default async function handler(req: ApiRequest, res: ApiResponse) {
-  await handleMemoryRequest('purchase-orders', req, res);
-}
+export const config = { api: { bodyParser: false } };
+export default handler;
